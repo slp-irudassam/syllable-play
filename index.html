@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>음절 조합 학습 놀이 · 아·어·오·우·이 계열</title>
+<style>
+  :root{
+    --vowel:#ffb703;   /* 모음 */
+    --cons:#8ecae6;    /* 자음 */
+    --real:#2a9d8f;    /* 의미단어 */
+    --nonsense:#e76f51;/* 무의미단어 */
+    --ink:#2b2b2b;
+    --paper:#fffdf7;
+    --line:#e7e2d6;
+    --shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Apple SD Gothic Neo","Malgun Gothic",Pretendard,sans-serif;
+    background:linear-gradient(160deg,#fef6e4 0%,#f3f7f0 100%);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    text-align:center;padding:18px 12px 6px;
+  }
+  header h1{font-size:22px;margin:0 0 10px}
+  .modeswitch{
+    display:inline-flex;background:#fff;border-radius:999px;padding:4px;
+    box-shadow:var(--shadow);gap:4px;
+  }
+  .modeswitch button{
+    border:0;background:transparent;padding:9px 18px;border-radius:999px;
+    font-size:15px;font-weight:700;color:#888;cursor:pointer;transition:.15s;
+  }
+  .modeswitch button.on{background:var(--ink);color:#fff}
+  main{max-width:960px;margin:0 auto;padding:10px 14px 60px}
+  .panel{display:none}
+  .panel.on{display:block;animation:fade .2s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- 공용 카드 ---------- */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+  .card h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .hint{font-size:13px;color:#8a8578;margin:4px 0 12px;line-height:1.5}
+
+  /* ---------- 놀이 모드: 조합 슬롯 ---------- */
+  .build{
+    display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;
+    min-height:96px;background:#fff;border:2px dashed var(--line);border-radius:16px;padding:14px;margin-bottom:10px;
+  }
+  .slot-syl{
+    font-size:44px;font-weight:800;line-height:1;padding:10px 6px;
+    animation:pop .18s;
+  }
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  .build .placeholder{color:#c9c3b4;font-size:17px;font-weight:600}
+  .verdict{
+    text-align:center;font-size:16px;font-weight:800;min-height:26px;margin:6px 0 2px;
+  }
+  .verdict.real{color:var(--real)}
+  .verdict.nonsense{color:var(--nonsense)}
+  .buildbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .buildbtns button{
+    border:0;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);
+  }
+  .btn-back{background:#ffd166}
+  .btn-clear{background:#f0ead9}
+  .btn-random{background:var(--cons);color:#08303e}
+  .btn-save{background:var(--real);color:#fff}
+
+  /* ---------- 음절 키보드 ---------- */
+  .kbd-legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:#8a8578;margin-bottom:10px}
+  .kbd-legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:7px}
+  .key{
+    border:0;border-radius:12px;font-size:24px;font-weight:800;padding:12px 0;cursor:pointer;
+    box-shadow:var(--shadow);transition:transform .08s;color:#123;
+  }
+  .key:active{transform:translateY(2px);box-shadow:none}
+  .key.vowel{background:var(--vowel)}
+  .key.cons{background:var(--cons)}
+  .keys-group-label{font-size:12px;font-weight:700;color:#8a8578;margin:12px 2px 6px}
+
+  /* 저장한 단어 */
+  .collected{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .chip{padding:7px 12px;border-radius:999px;font-size:16px;font-weight:700;box-shadow:var(--shadow)}
+  .chip.real{background:#d8f3ee;color:#1d6b60}
+  .chip.nonsense{background:#fce3da;color:#b23a1e}
+  .empty{color:#b7b0a0;font-size:13px}
+
+  /* ---------- 생성 모드 컨트롤 ---------- */
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .field label{display:block;font-size:12px;font-weight:700;color:#8a8578;margin-bottom:5px}
+  .field select,.field input{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);
+  }
+  .genbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .genbtns button{border:0;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+  .btn-gen{background:var(--ink);color:#fff}
+  .btn-print{background:#ffd166}
+  .btn-copy{background:#f0ead9}
+
+  .result-list{margin-top:8px}
+  .result-item{
+    display:flex;align-items:baseline;gap:10px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:20px;font-weight:700;
+  }
+  .result-item .idx{font-size:12px;color:#b7b0a0;min-width:22px;font-weight:600}
+  .result-item .tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:auto}
+  .tag.real{background:#d8f3ee;color:#1d6b60}
+  .tag.nonsense{background:#fce3da;color:#b23a1e}
+  .tag.sent{background:#e7e0f5;color:#5b3fa0}
+  .result-empty{color:#b7b0a0;font-size:14px;padding:14px 0}
+
+  /* ---------- 진도 설정 ---------- */
+  .prog-groups{display:flex;flex-direction:column;gap:10px}
+  .prog-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .prog-row.on{border-color:var(--real);background:#f2fbf9}
+  .prog-row .toggle{flex:0 0 auto}
+  .prog-row .lbl{font-weight:700;font-size:14px;min-width:110px}
+  .prog-row .syls{font-size:18px;font-weight:700;color:#555;letter-spacing:1px}
+  .prog-row.off .syls{color:#c9c3b4}
+  .switch{position:relative;width:46px;height:26px;display:inline-block}
+  .switch input{opacity:0;width:0;height:0}
+  .switch .sl{position:absolute;inset:0;background:#ccc;border-radius:999px;transition:.2s;cursor:pointer}
+  .switch .sl:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .sl{background:var(--real)}
+  .switch input:checked + .sl:before{transform:translateX(20px)}
+  .switch input:disabled + .sl{opacity:.5;cursor:not-allowed}
+
+  footer{text-align:center;font-size:12px;color:#b7b0a0;padding:20px 10px}
+
+  @media print{
+    body{background:#fff}
+    header,.modeswitch,footer,.controls,.genbtns,#playPanel,#gen-progNote,.hint{display:none !important}
+    .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    .result-item{font-size:22px}
+    #printTitle{display:block !important}
+  }
+  #printTitle{display:none;text-align:center;font-size:20px;font-weight:800;margin-bottom:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧩 음절 조합 학습 놀이</h1>
+  <div class="modeswitch">
+    <button id="tabPlay" class="on" onclick="switchMode('play')">🎈 아이 놀이</button>
+    <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
+    <button id="tabProg" onclick="switchMode('prog')">⚙️ 진도 설정</button>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 놀이 모드 ================= -->
+  <section id="playPanel" class="panel on">
+    <div class="card">
+      <h2>✏️ 음절을 눌러 단어를 만들어요</h2>
+      <div class="build" id="buildArea">
+        <span class="placeholder">아래 글자를 눌러보세요</span>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <div class="buildbtns">
+        <button class="btn-back" onclick="popSyl()">⬅️ 지우기</button>
+        <button class="btn-clear" onclick="clearBuild()">🧹 처음부터</button>
+        <button class="btn-random" onclick="randomWord()">🎲 랜덤 단어</button>
+        <button class="btn-save" onclick="saveWord()">⭐ 담기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kbd-legend">
+        <span><i class="dot" style="background:var(--vowel)"></i>모음</span>
+        <span><i class="dot" style="background:var(--cons)"></i>자음(받침 없음)</span>
+      </div>
+      <div id="keyboard"></div>
+    </div>
+
+    <div class="card">
+      <h2>⭐ 내가 담은 단어 <span id="collectedCount" style="font-size:13px;color:#8a8578;font-weight:600"></span></h2>
+      <div class="hint">초록색은 뜻이 있는 단어, 주황색은 뜻이 없는 소리단어예요.</div>
+      <div class="collected" id="collected"><span class="empty">아직 담은 단어가 없어요.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 생성 모드 ================= -->
+  <section id="genPanel" class="panel">
+    <div id="printTitle"></div>
+    <div class="card">
+      <h2>🖨️ 학습 자료 자동 생성</h2>
+      <p class="hint">조건을 정하고 <b>생성</b>을 누르면 목록이 만들어져요. 인쇄하거나 복사해서 활용하세요.<br>현재 활성화된 진도의 음절만 사용합니다. (진도 설정 탭에서 변경)</p>
+      <div class="controls">
+        <div class="field">
+          <label>유형</label>
+          <select id="genType">
+            <option value="real">의미 단어</option>
+            <option value="nonsense">무의미 단어(비단어)</option>
+            <option value="sentence">문장</option>
+          </select>
+        </div>
+        <div class="field" id="posField">
+          <label>품사 (의미 단어)</label>
+          <select id="genPos">
+            <option value="all">전체</option>
+            <option value="noun">명사</option>
+            <option value="verb">동사·형용사</option>
+            <option value="adv">부사</option>
+            <option value="pron">대명사·감탄사</option>
+          </select>
+        </div>
+        <div class="field" id="syllField">
+          <label>음절 수</label>
+          <select id="genSyll">
+            <option value="0">상관없음</option>
+            <option value="1">1음절</option>
+            <option value="2">2음절</option>
+            <option value="3">3음절</option>
+          </select>
+        </div>
+        <div class="field" id="lenField" style="display:none">
+          <label>어절 수 (문장)</label>
+          <select id="genLen">
+            <option value="0">섞어서</option>
+            <option value="2">2어절</option>
+            <option value="3">3어절</option>
+            <option value="4">4어절</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>개수</label>
+          <input id="genCount" type="number" min="1" max="60" value="12">
+        </div>
+      </div>
+      <div class="genbtns">
+        <button class="btn-gen" onclick="generate()">✨ 생성</button>
+        <button class="btn-copy" onclick="copyResult()">📋 복사</button>
+        <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 id="resultHead">📋 결과</h2>
+      <div class="result-list" id="resultList"><div class="result-empty">조건을 정하고 “생성”을 눌러주세요.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 진도 설정 ================= -->
+  <section id="progPanel" class="panel">
+    <div class="card">
+      <h2>⚙️ 배운 음절(진도) 설정</h2>
+      <p class="hint">현재 진도에 맞춰 사용할 음절을 켜고 끌 수 있어요. 나중에 받침·다른 자음을 배우면 새 진도를 켜서 확장하세요. 변경은 자동 저장됩니다.</p>
+      <div class="prog-groups" id="progGroups"></div>
+    </div>
+    <div class="card">
+      <h2>🔤 현재 활성 음절</h2>
+      <div class="collected" id="activeSyls"></div>
+    </div>
+  </section>
+</main>
+
+<footer>아·어·오·우·이 계열 음절 학습 · 언어재활 학습 도구</footer>
+
+<script>
+/* =========================================================
+   음절 진도 데이터 (확장 가능 구조)
+   - active:true 인 그룹만 조합/생성에 사용
+   - 새 진도 추가는 이 배열에 그룹을 추가하면 됨
+   ========================================================= */
+const PROGRESS = [
+  { id:'vowel', label:'모음', kind:'vowel', locked:true, active:true,
+    syllables:['아','어','오','우','이'] },
+  { id:'g', label:'ㄱ 계열', kind:'cons', active:true, syllables:['가','거','고','구','기'] },
+  { id:'n', label:'ㄴ 계열', kind:'cons', active:true, syllables:['나','너','노','누','니'] },
+  { id:'d', label:'ㄷ 계열', kind:'cons', active:true, syllables:['다','더','도','두','디'] },
+  { id:'m', label:'ㅁ 계열', kind:'cons', active:true, syllables:['마','머','모','무','미'] },
+  { id:'b', label:'ㅂ 계열', kind:'cons', active:true, syllables:['바','버','보','부','비'] },
+  { id:'s', label:'ㅅ 계열', kind:'cons', active:true, syllables:['사','서','소','수','시'] },
+  { id:'j', label:'ㅈ 계열', kind:'cons', active:true, syllables:['자','저','조','주','지'] },
+  /* --- 아래는 다음 진도 예시(기본 꺼짐). 실제 배우면 켜기 --- */
+  { id:'r', label:'ㄹ 계열(예정)', kind:'cons', active:false, syllables:['라','러','로','루','리'] },
+  { id:'h', label:'ㅎ 계열(예정)', kind:'cons', active:false, syllables:['하','허','호','후','히'] },
+];
+
+/* =========================================================
+   의미 단어 사전 (파일 자료 기반) - 품사/음절수 태깅
+   ========================================================= */
+const LEXICON = {
+  noun: {
+    1:['이','비','무','소','수','기','오','구','모'],
+    2:['아기','아이','오이','나이','나무','나비','누나','나사','바지','바다','바보','부자','구두','고기','가구','가지','거미','기구','노조','무지','도마','두부','모자','미소','비누','사자','시소','사기','자두','지구','주사','조기','이사','이마','부사','수도'],
+    3:['어머니','아버지','주머니','보자기','소나기','가마니','바나나','소시지','비디오','오디오','마사지']
+  },
+  verb: {
+    2:['가다','오다','사다','자다','서다','보다','주다','나다','지다','비다'],
+    3:['이기다','나누다','다니다','마시다','비비다','지우다','모이다','가시다','고이다','구기다']
+  },
+  adv: {
+    1:['더','다'],
+    2:['너무','자주','아마','어서','아주','다시','마주']
+  },
+  pron: {
+    1:['나','너','저'],
+    2:['어디','거기','저기','누구'],
+    3:[]
+  },
+  interj: {
+    1:['아','오','우','어'],
+    2:['어머'],
+    3:['어머나']
+  }
+};
+
+/* 감탄사는 pron 필터에 함께 포함 */
+function lexBucket(pos){
+  if(pos==='pron') return mergeBuckets(LEXICON.pron, LEXICON.interj);
+  return LEXICON[pos];
+}
+function mergeBuckets(a,b){
+  const out={1:[],2:[],3:[]};
+  [a,b].forEach(src=>{for(const k in src){out[k]=(out[k]||[]).concat(src[k]||[])}});
+  return out;
+}
+
+/* 전체 의미단어 집합(무의미 판별용) */
+const REAL_SET = new Set();
+[LEXICON.noun,LEXICON.verb,LEXICON.adv,LEXICON.pron,LEXICON.interj].forEach(b=>{
+  for(const k in b) b[k].forEach(w=>REAL_SET.add(w));
+});
+
+/* =========================================================
+   예시 문장 (파일 기반) - 어절 수 태깅
+   ========================================================= */
+const SENTENCES = {
+  2:['아기가 자다.','비가 오다.','누나가 오다.','고기 주다.','바다 가다.','오이 사다.','어디 가다?','너무 시다.'],
+  3:['아기가 두부 사다.','아버지가 바나나 주다.','누나가 고기 사다.','비가 자주 오다.','어서 바다 가다.','아이가 오이 보다.','마주 서서 보다.','나도 사자 보다.'],
+  4:['누나가 바나나 더 주다.','어머, 비가 너무 오다.','아버지가 아주 자주 오다.','아이가 바지 자주 구기다.','어머니가 두부 다시 사다.','나도 오이 다시 사다.','사자가 거미 아주 자주 보다.']
+};
+
+/* =========================================================
+   상태
+   ========================================================= */
+const STORE_KEY='syllable-progress-v1';
+let build=[];      // 조합 중인 음절
+let collected=[];  // 담은 단어 [{word,real}]
+
+/* 저장된 진도 불러오기 */
+(function loadProgress(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    if(saved.active){
+      PROGRESS.forEach(g=>{ if(!g.locked && g.id in saved.active) g.active=saved.active[g.id]; });
+    }
+  }catch(e){}
+})();
+function saveProgress(){
+  const active={};
+  PROGRESS.forEach(g=>active[g.id]=g.active);
+  localStorage.setItem(STORE_KEY,JSON.stringify({active}));
+}
+
+/* 현재 활성 음절 목록 */
+function activeSyllables(){
+  const v=[],c=[];
+  PROGRESS.forEach(g=>{ if(g.active){ (g.kind==='vowel'?v:c).push(...g.syllables); } });
+  return {vowels:v, cons:c, all:[...v,...c]};
+}
+
+/* =========================================================
+   모드 전환
+   ========================================================= */
+function switchMode(m){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.modeswitch button').forEach(b=>b.classList.remove('on'));
+  if(m==='play'){ playPanel.classList.add('on'); tabPlay.classList.add('on'); }
+  if(m==='gen'){ genPanel.classList.add('on'); tabGen.classList.add('on'); }
+  if(m==='prog'){ progPanel.classList.add('on'); tabProg.classList.add('on'); renderProgress(); }
+}
+
+/* =========================================================
+   놀이 모드: 키보드
+   ========================================================= */
+function renderKeyboard(){
+  const kb=document.getElementById('keyboard');
+  kb.innerHTML='';
+  PROGRESS.forEach(g=>{
+    if(!g.active) return;
+    const lbl=document.createElement('div');
+    lbl.className='keys-group-label';
+    lbl.textContent=g.label;
+    kb.appendChild(lbl);
+    const grid=document.createElement('div');
+    grid.className='keys';
+    g.syllables.forEach(s=>{
+      const b=document.createElement('button');
+      b.className='key '+(g.kind==='vowel'?'vowel':'cons');
+      b.textContent=s;
+      b.onclick=()=>pushSyl(s);
+      grid.appendChild(b);
+    });
+    kb.appendChild(grid);
+  });
+}
+
+function pushSyl(s){
+  if(build.length>=4) return; // 최대 4음절
+  build.push(s);
+  renderBuild();
+}
+function popSyl(){ build.pop(); renderBuild(); }
+function clearBuild(){ build=[]; renderBuild(); }
+
+function renderBuild(){
+  const area=document.getElementById('buildArea');
+  const verdict=document.getElementById('verdict');
+  if(build.length===0){
+    area.innerHTML='<span class="placeholder">아래 글자를 눌러보세요</span>';
+    verdict.textContent=''; verdict.className='verdict';
+    return;
+  }
+  area.innerHTML='';
+  build.forEach(s=>{
+    const el=document.createElement('span');
+    el.className='slot-syl';
+    el.textContent=s;
+    area.appendChild(el);
+  });
+  const word=build.join('');
+  if(REAL_SET.has(word)){
+    verdict.textContent='✅ 뜻이 있는 단어예요! “'+word+'”';
+    verdict.className='verdict real';
+  }else{
+    verdict.textContent='🔶 소리단어(뜻은 없어요) “'+word+'”';
+    verdict.className='verdict nonsense';
+  }
+}
+
+/* 랜덤 단어 (활성 음절에서 2~3음절) */
+function randomWord(){
+  const {vowels,cons,all}=activeSyllables();
+  if(all.length===0) return;
+  const n=Math.random()<0.5?2:3;
+  build=[];
+  for(let i=0;i<n;i++){
+    build.push(all[Math.floor(Math.random()*all.length)]);
+  }
+  renderBuild();
+}
+
+function saveWord(){
+  if(build.length===0) return;
+  const word=build.join('');
+  if(collected.some(c=>c.word===word)) { flashSaved(); return; }
+  collected.unshift({word, real:REAL_SET.has(word)});
+  renderCollected();
+  flashSaved();
+}
+function flashSaved(){
+  const v=document.getElementById('verdict');
+  const prev=v.textContent;
+  v.textContent='⭐ 담았어요!';
+  setTimeout(()=>{ if(build.length) renderBuild(); else {v.textContent='';v.className='verdict';} },700);
+}
+function renderCollected(){
+  const box=document.getElementById('collected');
+  const cnt=document.getElementById('collectedCount');
+  if(collected.length===0){
+    box.innerHTML='<span class="empty">아직 담은 단어가 없어요.</span>';
+    cnt.textContent='';
+    return;
+  }
+  cnt.textContent='('+collected.length+'개)';
+  box.innerHTML='';
+  collected.forEach(c=>{
+    const chip=document.createElement('span');
+    chip.className='chip '+(c.real?'real':'nonsense');
+    chip.textContent=c.word;
+    box.appendChild(chip);
+  });
+}
+
+/* =========================================================
+   생성 모드
+   ========================================================= */
+function activeAllows(word){
+  // 단어의 모든 음절이 활성 음절 집합에 포함되는지
+  const set=new Set(activeSyllables().all);
+  for(const ch of word){ if(!set.has(ch)) return false; }
+  return true;
+}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function genRealWords(pos,syll,count){
+  let pool=[];
+  const buckets = pos==='all'
+    ? ['noun','verb','adv','pron']
+    : [pos];
+  buckets.forEach(p=>{
+    const b=lexBucket(p);
+    for(const k in b){
+      if(syll!=0 && String(syll)!==k) continue;
+      pool.push(...b[k]);
+    }
+  });
+  pool=[...new Set(pool)].filter(activeAllows);
+  return shuffle(pool).slice(0,count).map(w=>({text:w, type:'real'}));
+}
+
+function genNonsense(syll,count){
+  const {all}=activeSyllables();
+  if(all.length===0) return [];
+  const out=[]; const seen=new Set();
+  let guard=0;
+  while(out.length<count && guard<count*400){
+    guard++;
+    const n = syll!=0 ? Number(syll) : (Math.random()<0.5?2:3);
+    let w='';
+    for(let i=0;i<n;i++) w+=all[Math.floor(Math.random()*all.length)];
+    if(seen.has(w)) continue;
+    if(REAL_SET.has(w)) continue; // 진짜 단어면 제외
+    seen.add(w);
+    out.push({text:w, type:'nonsense'});
+  }
+  return out;
+}
+
+function genSentences(len,count){
+  let pool=[];
+  const keys = len!=0 ? [String(len)] : ['2','3','4'];
+  keys.forEach(k=>{
+    (SENTENCES[k]||[]).forEach(s=>{
+      // 문장부호 제거 후 음절 검사
+      const bare=s.replace(/[.,?!\s]/g,'');
+      if(activeAllows(bare)) pool.push(s);
+    });
+  });
+  pool=[...new Set(pool)];
+  return shuffle(pool).slice(0,count).map(s=>({text:s, type:'sentence'}));
+}
+
+function generate(){
+  const type=document.getElementById('genType').value;
+  const pos=document.getElementById('genPos').value;
+  const syll=document.getElementById('genSyll').value;
+  const len=document.getElementById('genLen').value;
+  let count=parseInt(document.getElementById('genCount').value)||12;
+  count=Math.max(1,Math.min(60,count));
+
+  let items=[];
+  let head='';
+  if(type==='real'){ items=genRealWords(pos,syll,count); head='📋 의미 단어'; }
+  else if(type==='nonsense'){ items=genNonsense(syll,count); head='📋 무의미 단어(비단어)'; }
+  else { items=genSentences(len,count); head='📋 문장'; }
+
+  renderResult(items,head);
+}
+
+function renderResult(items,head){
+  document.getElementById('resultHead').textContent=head+' ('+items.length+'개)';
+  document.getElementById('printTitle').textContent=head.replace('📋 ','')+' 연습';
+  const list=document.getElementById('resultList');
+  if(items.length===0){
+    list.innerHTML='<div class="result-empty">조건에 맞는 항목이 부족해요. 진도를 더 켜거나 조건을 바꿔보세요.</div>';
+    lastResult=[]; return;
+  }
+  list.innerHTML='';
+  const tagName={real:'뜻o',nonsense:'소리',sentence:'문장'};
+  items.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='result-item';
+    row.innerHTML='<span class="idx">'+(i+1)+'</span><span>'+it.text+
+      '</span><span class="tag '+(it.type==='sentence'?'sent':it.type)+'">'+tagName[it.type]+'</span>';
+    list.appendChild(row);
+  });
+  lastResult=items.map(it=>it.text);
+}
+
+let lastResult=[];
+function copyResult(){
+  if(!lastResult.length){ return; }
+  const txt=lastResult.map((t,i)=>(i+1)+'. '+t).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=event.target; const o=b.textContent; b.textContent='✅ 복사됨';
+    setTimeout(()=>b.textContent=o,1200);
+  });
+}
+
+/* 유형 변경 시 필드 표시 전환 */
+document.getElementById('genType').addEventListener('change',e=>{
+  const t=e.target.value;
+  document.getElementById('posField').style.display = t==='real'?'':'none';
+  document.getElementById('syllField').style.display = t==='sentence'?'none':'';
+  document.getElementById('lenField').style.display = t==='sentence'?'':'none';
+});
+
+/* =========================================================
+   진도 설정 화면
+   ========================================================= */
+function renderProgress(){
+  const box=document.getElementById('progGroups');
+  box.innerHTML='';
+  PROGRESS.forEach(g=>{
+    const row=document.createElement('div');
+    row.className='prog-row '+(g.active?'on':'off');
+    const disabled=g.locked?'disabled':'';
+    row.innerHTML=
+      '<label class="switch toggle"><input type="checkbox" '+(g.active?'checked':'')+' '+disabled+
+        ' onchange="toggleGroup(\''+g.id+'\',this.checked)"><span class="sl"></span></label>'+
+      '<span class="lbl">'+g.label+(g.locked?' 🔒':'')+'</span>'+
+      '<span class="syls">'+g.syllables.join(' · ')+'</span>';
+    box.appendChild(row);
+  });
+  renderActiveSyls();
+}
+function toggleGroup(id,val){
+  const g=PROGRESS.find(x=>x.id===id);
+  if(!g||g.locked) return;
+  g.active=val;
+  saveProgress();
+  renderProgress();
+  renderKeyboard();
+}
+function renderActiveSyls(){
+  const box=document.getElementById('activeSyls');
+  const all=activeSyllables().all;
+  box.innerHTML='';
+  all.forEach(s=>{
+    const chip=document.createElement('span');
+    chip.className='chip real';
+    chip.textContent=s;
+    box.appendChild(chip);
+  });
+}
+
+/* =========================================================
+   초기화
+   ========================================================= */
+renderKeyboard();
+renderBuild();
+renderCollected();
+</script>
+</body>
+</html>
