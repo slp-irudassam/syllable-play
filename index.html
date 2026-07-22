@@ -6,158 +6,176 @@
 <title>음절 조합 학습 놀이 · 아·어·오·우·이 계열</title>
 <style>
   :root{
-    --vowel:#ffb703;   /* 모음 */
-    --cons:#8ecae6;    /* 자음 */
-    --real:#2a9d8f;    /* 의미단어 */
-    --nonsense:#e76f51;/* 무의미단어 */
-    --ink:#2b2b2b;
-    --paper:#fffdf7;
-    --line:#e7e2d6;
-    --shadow:0 2px 0 rgba(0,0,0,.12);
+    --lime:#eaff3d;      /* 형광 라임 포인트 */
+    --lime-soft:#f2ff8f; /* 옅은 라임(하이라이트 박스) */
+    --blue:#5b6ef5;      /* 선택 탭 */
+    --ink:#141414;       /* 검정 테두리/글자 */
+    --real:#3ecf6a;      /* 의미단어 */
+    --nonsense:#ff8a4c;  /* 무의미단어 */
+    --sent:#b79bff;      /* 문장 */
+    --cons:#bfe3ff;      /* 자음 키 */
+    --paper:#fff;
+    --bg:#f4f4ef;
+    --bd:2px solid var(--ink);
+    --sh:4px 4px 0 var(--ink);
+    --sh-sm:3px 3px 0 var(--ink);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
     font-family:"Apple SD Gothic Neo","Malgun Gothic",Pretendard,sans-serif;
-    background:linear-gradient(160deg,#fef6e4 0%,#f3f7f0 100%);
+    background:var(--bg);
     color:var(--ink);
     min-height:100vh;
     -webkit-text-size-adjust:100%;
   }
-  header{
-    text-align:center;padding:18px 12px 6px;
+  /* ---------- 상단 라임 바 ---------- */
+  .topbar{
+    background:var(--lime);border-bottom:var(--bd);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;
   }
-  header h1{font-size:22px;margin:0 0 10px}
+  .brand{font-size:24px;font-weight:900;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+  .brand .dotmark{width:16px;height:16px;background:var(--ink);border-radius:50%;display:inline-block}
+  .topbar .sub{font-size:13px;font-weight:800}
+
   .modeswitch{
-    display:inline-flex;background:#fff;border-radius:999px;padding:4px;
-    box-shadow:var(--shadow);gap:4px;
+    max-width:960px;margin:22px auto 0;padding:0 16px;
+    display:flex;gap:10px;flex-wrap:wrap;
   }
   .modeswitch button{
-    border:0;background:transparent;padding:9px 18px;border-radius:999px;
-    font-size:15px;font-weight:700;color:#888;cursor:pointer;transition:.15s;
+    border:var(--bd);background:#fff;padding:11px 20px;
+    font-size:15px;font-weight:800;color:var(--ink);cursor:pointer;
+    box-shadow:var(--sh-sm);transition:transform .08s;
   }
-  .modeswitch button.on{background:var(--ink);color:#fff}
-  main{max-width:960px;margin:0 auto;padding:10px 14px 60px}
+  .modeswitch button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .modeswitch button.on{background:var(--blue);color:#fff}
+  main{max-width:960px;margin:0 auto;padding:16px 16px 70px}
   .panel{display:none}
-  .panel.on{display:block;animation:fade .2s}
+  .panel.on{display:block;animation:fade .18s}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   /* ---------- 공용 카드 ---------- */
-  .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
-  .card h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
-  .hint{font-size:13px;color:#8a8578;margin:4px 0 12px;line-height:1.5}
+  .card{background:var(--paper);border:var(--bd);border-radius:2px;padding:20px;margin:16px 0;box-shadow:var(--sh)}
+  .card h2{font-size:18px;font-weight:900;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .eyebrow{font-size:12px;font-weight:900;letter-spacing:2px;color:var(--blue);margin:0 0 4px}
+  .hint{font-size:13px;color:#555;margin:4px 0 14px;line-height:1.6}
+  .hint b{color:var(--ink)}
 
   /* ---------- 놀이 모드: 조합 슬롯 ---------- */
   .build{
-    display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;
-    min-height:96px;background:#fff;border:2px dashed var(--line);border-radius:16px;padding:14px;margin-bottom:10px;
+    display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;
+    min-height:104px;background:var(--lime-soft);border:var(--bd);border-radius:2px;padding:16px;margin-bottom:12px;
   }
   .slot-syl{
-    font-size:44px;font-weight:800;line-height:1;padding:10px 6px;
-    animation:pop .18s;
+    font-size:48px;font-weight:900;line-height:1;padding:8px 4px;animation:pop .16s;
   }
   @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-  .build .placeholder{color:#c9c3b4;font-size:17px;font-weight:600}
-  .verdict{
-    text-align:center;font-size:16px;font-weight:800;min-height:26px;margin:6px 0 2px;
+  .build .placeholder{color:#9a9a86;font-size:17px;font-weight:800}
+  .verdict{text-align:center;font-size:16px;font-weight:900;min-height:26px;margin:8px 0 2px}
+  .verdict.real{color:#2a9d54}
+  .verdict.nonsense{color:#e06a2a}
+  .buildbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  .buildbtns button, .genbtns button{
+    border:var(--bd);border-radius:2px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:var(--sh-sm);transition:transform .08s;
   }
-  .verdict.real{color:var(--real)}
-  .verdict.nonsense{color:var(--nonsense)}
-  .buildbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
-  .buildbtns button{
-    border:0;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);
-  }
-  .btn-back{background:#ffd166}
-  .btn-clear{background:#f0ead9}
-  .btn-random{background:var(--cons);color:#08303e}
-  .btn-save{background:var(--real);color:#fff}
+  .buildbtns button:active, .genbtns button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .btn-back{background:#fff}
+  .btn-clear{background:#fff}
+  .btn-random{background:var(--cons)}
+  .btn-save{background:var(--lime)}
 
   /* ---------- 음절 키보드 ---------- */
-  .kbd-legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:#8a8578;margin-bottom:10px}
-  .kbd-legend span{display:inline-flex;align-items:center;gap:5px}
-  .dot{width:12px;height:12px;border-radius:4px;display:inline-block}
-  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:7px}
+  .kbd-legend{display:flex;gap:16px;justify-content:center;font-size:12px;font-weight:800;color:#444;margin-bottom:14px}
+  .kbd-legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:14px;height:14px;border:2px solid var(--ink);display:inline-block}
+  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:9px}
   .key{
-    border:0;border-radius:12px;font-size:24px;font-weight:800;padding:12px 0;cursor:pointer;
-    box-shadow:var(--shadow);transition:transform .08s;color:#123;
+    border:var(--bd);border-radius:2px;font-size:24px;font-weight:900;padding:12px 0;cursor:pointer;
+    box-shadow:var(--sh-sm);transition:transform .06s;color:var(--ink);
   }
-  .key:active{transform:translateY(2px);box-shadow:none}
-  .key.vowel{background:var(--vowel)}
+  .key:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .key.vowel{background:var(--lime)}
   .key.cons{background:var(--cons)}
-  .keys-group-label{font-size:12px;font-weight:700;color:#8a8578;margin:12px 2px 6px}
+  .keys-group-label{font-size:12px;font-weight:900;color:#888;letter-spacing:1px;margin:16px 2px 8px}
 
-  /* 저장한 단어 */
-  .collected{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-  .chip{padding:7px 12px;border-radius:999px;font-size:16px;font-weight:700;box-shadow:var(--shadow)}
-  .chip.real{background:#d8f3ee;color:#1d6b60}
-  .chip.nonsense{background:#fce3da;color:#b23a1e}
-  .empty{color:#b7b0a0;font-size:13px}
+  /* 저장한 단어 / 칩 */
+  .collected{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px}
+  .chip{padding:7px 13px;border:var(--bd);border-radius:2px;font-size:16px;font-weight:800;box-shadow:var(--sh-sm)}
+  .chip.real{background:var(--real)}
+  .chip.nonsense{background:var(--nonsense)}
+  .empty{color:#999;font-size:13px;font-weight:600}
 
   /* ---------- 생성 모드 컨트롤 ---------- */
-  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-  .field label{display:block;font-size:12px;font-weight:700;color:#8a8578;margin-bottom:5px}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .field label{display:block;font-size:12px;font-weight:900;color:#666;margin-bottom:6px}
   .field select,.field input{
-    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);
+    width:100%;padding:11px 10px;border:var(--bd);border-radius:2px;font-size:14px;font-weight:700;background:#fff;color:var(--ink);
   }
-  .genbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-  .genbtns button{border:0;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
-  .btn-gen{background:var(--ink);color:#fff}
-  .btn-print{background:#ffd166}
-  .btn-copy{background:#f0ead9}
+  .field select:focus,.field input:focus{outline:none;box-shadow:var(--sh-sm)}
+  .genbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn-gen{background:var(--blue);color:#fff}
+  .btn-print{background:var(--lime)}
+  .btn-copy{background:#fff}
 
   .result-list{margin-top:8px}
   .result-item{
-    display:flex;align-items:baseline;gap:10px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:20px;font-weight:700;
+    display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:2px solid #eee;font-size:20px;font-weight:800;
   }
-  .result-item .idx{font-size:12px;color:#b7b0a0;min-width:22px;font-weight:600}
-  .result-item .tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:auto}
-  .tag.real{background:#d8f3ee;color:#1d6b60}
-  .tag.nonsense{background:#fce3da;color:#b23a1e}
-  .tag.sent{background:#e7e0f5;color:#5b3fa0}
-  .result-empty{color:#b7b0a0;font-size:14px;padding:14px 0}
+  .result-item:last-child{border-bottom:0}
+  .result-item .idx{font-size:12px;color:#aaa;min-width:24px;font-weight:800}
+  .result-item .tag{font-size:11px;font-weight:900;padding:3px 9px;border:2px solid var(--ink);margin-left:auto}
+  .tag.real{background:var(--real)}
+  .tag.nonsense{background:var(--nonsense)}
+  .tag.sent{background:var(--sent)}
+  .result-empty{color:#999;font-size:14px;font-weight:600;padding:14px 0}
 
   /* ---------- 진도 설정 ---------- */
-  .prog-groups{display:flex;flex-direction:column;gap:10px}
-  .prog-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
-  .prog-row.on{border-color:var(--real);background:#f2fbf9}
+  .prog-groups{display:flex;flex-direction:column;gap:12px}
+  .prog-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:var(--bd);border-radius:2px;background:#fff;box-shadow:var(--sh-sm)}
+  .prog-row.on{background:var(--lime-soft)}
+  .prog-row.off{background:#f7f7f2;opacity:.75}
   .prog-row .toggle{flex:0 0 auto}
-  .prog-row .lbl{font-weight:700;font-size:14px;min-width:110px}
-  .prog-row .syls{font-size:18px;font-weight:700;color:#555;letter-spacing:1px}
-  .prog-row.off .syls{color:#c9c3b4}
-  .switch{position:relative;width:46px;height:26px;display:inline-block}
+  .prog-row .lbl{font-weight:900;font-size:14px;min-width:110px}
+  .prog-row .syls{font-size:18px;font-weight:800;color:#333;letter-spacing:1px}
+  .prog-row.off .syls{color:#bbb}
+  .switch{position:relative;width:52px;height:28px;display:inline-block}
   .switch input{opacity:0;width:0;height:0}
-  .switch .sl{position:absolute;inset:0;background:#ccc;border-radius:999px;transition:.2s;cursor:pointer}
-  .switch .sl:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
-  .switch input:checked + .sl{background:var(--real)}
-  .switch input:checked + .sl:before{transform:translateX(20px)}
-  .switch input:disabled + .sl{opacity:.5;cursor:not-allowed}
+  .switch .sl{position:absolute;inset:0;background:#fff;border:2px solid var(--ink);transition:.15s;cursor:pointer}
+  .switch .sl:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:var(--ink);transition:.15s}
+  .switch input:checked + .sl{background:var(--blue)}
+  .switch input:checked + .sl:before{transform:translateX(24px);background:#fff}
+  .switch input:disabled + .sl{opacity:.4;cursor:not-allowed}
 
-  footer{text-align:center;font-size:12px;color:#b7b0a0;padding:20px 10px}
+  footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
   @media print{
     body{background:#fff}
-    header,.modeswitch,footer,.controls,.genbtns,#playPanel,#gen-progNote,.hint{display:none !important}
-    .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    .topbar,.modeswitch,footer,.controls,.genbtns,#playPanel,.hint,.eyebrow{display:none !important}
+    .card{box-shadow:none;border:2px solid #000;break-inside:avoid}
     .result-item{font-size:22px}
+    .result-item .tag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     #printTitle{display:block !important}
   }
-  #printTitle{display:none;text-align:center;font-size:20px;font-weight:800;margin-bottom:10px}
+  #printTitle{display:none;text-align:center;font-size:22px;font-weight:900;margin-bottom:10px}
 </style>
 </head>
 <body>
-<header>
-  <h1>🧩 음절 조합 학습 놀이</h1>
-  <div class="modeswitch">
-    <button id="tabPlay" class="on" onclick="switchMode('play')">🎈 아이 놀이</button>
-    <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
-    <button id="tabProg" onclick="switchMode('prog')">⚙️ 진도 설정</button>
-  </div>
-</header>
+<div class="topbar">
+  <div class="brand"><span class="dotmark"></span>음절놀이</div>
+  <div class="sub">아·어·오·우·이 계열</div>
+</div>
+<div class="modeswitch">
+  <button id="tabPlay" class="on" onclick="switchMode('play')">🎈 아이 놀이</button>
+  <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
+  <button id="tabProg" onclick="switchMode('prog')">⚙️ 진도 설정</button>
+</div>
 
 <main>
   <!-- ================= 놀이 모드 ================= -->
   <section id="playPanel" class="panel on">
     <div class="card">
+      <p class="eyebrow">MAKE A WORD</p>
       <h2>✏️ 음절을 눌러 단어를 만들어요</h2>
       <div class="build" id="buildArea">
         <span class="placeholder">아래 글자를 눌러보세요</span>
@@ -190,6 +208,7 @@
   <section id="genPanel" class="panel">
     <div id="printTitle"></div>
     <div class="card">
+      <p class="eyebrow">AUTO GENERATOR</p>
       <h2>🖨️ 학습 자료 자동 생성</h2>
       <p class="hint">조건을 정하고 <b>생성</b>을 누르면 목록이 만들어져요. 인쇄하거나 복사해서 활용하세요.<br>현재 활성화된 진도의 음절만 사용합니다. (진도 설정 탭에서 변경)</p>
       <div class="controls">
