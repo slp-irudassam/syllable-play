@@ -269,6 +269,21 @@
   <!-- ================= 진도 설정 ================= -->
   <section id="progPanel" class="panel">
     <div class="card">
+      <p class="eyebrow">ONLINE DICTIONARY</p>
+      <h2>📚 온라인 사전 연동 (선택)</h2>
+      <p class="hint">
+        기본은 내장 사전(뜻 판별)만 씁니다. <b>한국어기초사전 API 키</b>를 넣으면, 내장 사전에 없는 단어도 실시간으로 조회해 판별해요. 한 번 조회한 단어는 저장되어 다음부터는 바로 판별되고, 무의미 단어 생성에서도 자동으로 빠집니다.<br>
+        키 발급: <b>krdict.korean.go.kr</b> 회원가입 → 오픈API 사용 신청 → 32자리 인증키 발급(무료).
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="apiKeyInput" type="text" placeholder="한국어기초사전 인증키 붙여넣기"
+          style="flex:1;min-width:220px;padding:11px 10px;border:var(--bd);border-radius:2px;font-size:14px;font-weight:700;font-family:monospace">
+        <button class="btn-save" style="border:var(--bd);border-radius:2px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:var(--sh-sm)" onclick="saveKey()">💾 저장</button>
+        <button class="btn-clear" style="border:var(--bd);border-radius:2px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:var(--sh-sm)" onclick="clearKey()">지우기</button>
+      </div>
+      <div id="keyStatus" style="font-size:13px;font-weight:800;margin-top:10px"></div>
+    </div>
+    <div class="card">
       <h2>⚙️ 배운 음절(진도) 설정</h2>
       <p class="hint">현재 진도에 맞춰 사용할 음절을 켜고 끌 수 있어요. 나중에 받침·다른 자음을 배우면 새 진도를 켜서 확장하세요. 변경은 자동 저장됩니다.</p>
       <div class="prog-groups" id="progGroups"></div>
@@ -362,8 +377,60 @@ const SENTENCES = {
    상태
    ========================================================= */
 const STORE_KEY='syllable-progress-v1';
+const KEY_STORE='krdict-key-v1';
+const CACHE_STORE='krdict-cache-v1';
 let build=[];      // 조합 중인 음절
 let collected=[];  // 담은 단어 [{word,real}]
+let apiKey = localStorage.getItem(KEY_STORE) || '';
+let lookupCache = {};   // {단어: true(실단어)/false(비단어)} 온라인 조회 캐시
+
+/* 온라인 조회 캐시 불러오기 (실단어로 확인된 건 내장 사전에 반영) */
+(function loadCache(){
+  try{
+    lookupCache = JSON.parse(localStorage.getItem(CACHE_STORE)||'{}');
+    for(const w in lookupCache){ if(lookupCache[w]) REAL_SET.add(w); }
+  }catch(e){ lookupCache={}; }
+})();
+function saveCache(){ localStorage.setItem(CACHE_STORE, JSON.stringify(lookupCache)); }
+
+/* 한국어기초사전 온라인 조회
+   반환: true(실단어) / false(없음) / null(조회불가: 키없음·오류) */
+async function lookupOnline(word){
+  if(word in lookupCache) return lookupCache[word];
+  if(!apiKey) return null;
+  const url='https://krdict.korean.go.kr/api/search?key='+encodeURIComponent(apiKey)+
+            '&q='+encodeURIComponent(word)+'&part=word&sort=dict&num=20';
+  try{
+    const r=await fetch(url);
+    const t=await r.text();
+    const xml=new DOMParser().parseFromString(t,'text/xml');
+    if(xml.querySelector('error')) return null;  // 인증키 오류 등 → 캐시하지 않음
+    const heads=[...xml.getElementsByTagName('word')].map(n=>n.textContent.replace(/[-\s]/g,''));
+    const found=heads.includes(word);
+    lookupCache[word]=found;
+    if(found) REAL_SET.add(word);
+    saveCache();
+    return found;
+  }catch(e){ return null; }  // 네트워크/CORS 오류
+}
+
+/* API 키 관리 */
+function saveKey(){
+  apiKey=(document.getElementById('apiKeyInput').value||'').trim();
+  localStorage.setItem(KEY_STORE, apiKey);
+  updateKeyStatus();
+}
+function clearKey(){
+  apiKey=''; localStorage.removeItem(KEY_STORE);
+  const el=document.getElementById('apiKeyInput'); if(el) el.value='';
+  updateKeyStatus();
+}
+function updateKeyStatus(){
+  const el=document.getElementById('keyStatus'); if(!el) return;
+  const n=Object.keys(lookupCache).length;
+  if(apiKey){ el.innerHTML='✅ 키 저장됨 · 온라인 사전 켜짐'+(n?' (조회 기록 '+n+'개)':''); el.style.color='#2a9d54'; }
+  else { el.textContent='⚪ 키 없음 · 내장 사전만 사용'; el.style.color='#999'; }
+}
 
 /* 저장된 진도 불러오기 */
 (function loadProgress(){
@@ -446,10 +513,32 @@ function renderBuild(){
     el.textContent=s;
     area.appendChild(el);
   });
-  const word=build.join('');
+  applyVerdict(build.join(''));
+}
+
+/* 단어 판별: 내장 사전 즉시 → 없으면(키 있을 때) 온라인 조회 */
+function applyVerdict(word){
+  const verdict=document.getElementById('verdict');
   if(REAL_SET.has(word)){
     verdict.textContent='✅ 뜻이 있는 단어예요! “'+word+'”';
     verdict.className='verdict real';
+    return;
+  }
+  // 내장 사전에 없음: 키가 있고 아직 조회 안 한 단어면 온라인 조회
+  if(apiKey && !(word in lookupCache)){
+    verdict.textContent='🔎 사전에서 찾는 중… “'+word+'”';
+    verdict.className='verdict';
+    lookupOnline(word).then(found=>{
+      if(build.join('')!==word) return;  // 그새 단어가 바뀌면 무시
+      if(found){
+        verdict.textContent='✅ 뜻이 있는 단어예요! “'+word+'” (사전)';
+        verdict.className='verdict real';
+        renderCollected();  // 캐시 반영(색 갱신 대비)
+      }else{
+        verdict.textContent='🔶 소리단어(뜻은 없어요) “'+word+'”';
+        verdict.className='verdict nonsense';
+      }
+    });
   }else{
     verdict.textContent='🔶 소리단어(뜻은 없어요) “'+word+'”';
     verdict.className='verdict nonsense';
@@ -622,6 +711,9 @@ document.getElementById('genType').addEventListener('change',e=>{
    진도 설정 화면
    ========================================================= */
 function renderProgress(){
+  const keyInput=document.getElementById('apiKeyInput');
+  if(keyInput) keyInput.value=apiKey;
+  updateKeyStatus();
   const box=document.getElementById('progGroups');
   box.innerHTML='';
   PROGRESS.forEach(g=>{
