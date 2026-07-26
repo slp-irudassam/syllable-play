@@ -152,6 +152,10 @@
   .vowel-cell{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 16px;border:var(--bd);border-radius:2px;background:#f7f7f2;box-shadow:var(--sh-sm);opacity:.55;transition:.12s}
   .vowel-cell.on{background:var(--lime-soft);opacity:1}
   .vowel-cell .vch{font-size:30px;font-weight:900;line-height:1}
+  .pick-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 8px}
+  .pick-head .keys-group-label{margin:0}
+  .mini-btn{border:var(--bd);border-radius:2px;background:#fff;font-size:12px;font-weight:800;padding:5px 10px;cursor:pointer;box-shadow:var(--sh-sm);transition:transform .06s}
+  .mini-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 
   footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
@@ -286,9 +290,17 @@
     <div class="card">
       <h2>⚙️ 배운 음절(진도) 설정</h2>
       <p class="hint">배운 모음과 자음만 켜세요. 켠 자음 × 켠 모음이 조합되어 놀이·자료 생성에 사용됩니다. 변경은 자동 저장됩니다.</p>
-      <div class="keys-group-label" style="margin-top:4px">모음 (배운 모음만 켜기 · 최소 1개)</div>
+      <div class="pick-head">
+        <span class="keys-group-label">모음</span>
+        <button class="mini-btn" onclick="setAllVowels(true)">모두 켜기</button>
+        <button class="mini-btn" onclick="setAllVowels(false)">모두 끄기</button>
+      </div>
       <div class="vowel-picks" id="vowelPicks"></div>
-      <div class="keys-group-label" style="margin-top:18px">자음 (ㄱ~ㅎ)</div>
+      <div class="pick-head">
+        <span class="keys-group-label">자음 (ㄱ~ㅎ)</span>
+        <button class="mini-btn" onclick="setAllCons(true)">모두 켜기</button>
+        <button class="mini-btn" onclick="setAllCons(false)">모두 끄기</button>
+      </div>
       <div class="vowel-picks" id="consPicks"></div>
     </div>
   </section>
@@ -451,7 +463,6 @@ function updateKeyStatus(){
     const saved=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
     if(Array.isArray(saved.v)){
       VOWELS.forEach(x=>x.active=saved.v.includes(x.ch));
-      if(!VOWELS.some(x=>x.active)) VOWELS.forEach(x=>x.active=true); // 최소 1개
     }
     if(Array.isArray(saved.c)){
       CONSONANTS.forEach(x=>x.active=saved.c.includes(x.ch));
@@ -766,7 +777,6 @@ function renderConsPicks(){
   CONSONANTS.forEach((cn,i)=>box.appendChild(pickCell(cn.ch,cn.active,'toggleCons('+i+',this.checked)')));
 }
 function toggleVowel(i,val){
-  if(!val && VOWELS.filter(v=>v.active).length<=1){ renderVowelPicks(); return; } // 최소 1개 유지
   VOWELS[i].active=val;
   saveProgress();
   renderVowelPicks();
@@ -775,6 +785,20 @@ function toggleVowel(i,val){
 }
 function toggleCons(i,val){
   CONSONANTS[i].active=val;
+  saveProgress();
+  renderConsPicks();
+  renderActiveSyls();
+  renderKeyboard();
+}
+function setAllVowels(val){
+  VOWELS.forEach(v=>v.active=val);
+  saveProgress();
+  renderVowelPicks();
+  renderActiveSyls();
+  renderKeyboard();
+}
+function setAllCons(val){
+  CONSONANTS.forEach(c=>c.active=val);
   saveProgress();
   renderConsPicks();
   renderActiveSyls();
