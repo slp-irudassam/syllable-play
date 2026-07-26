@@ -280,13 +280,11 @@
       </p>
     </div>
     <div class="card">
-      <h2>🔤 배운 모음 선택</h2>
-      <p class="hint">배운 모음만 켜세요. 켠 모음만 모든 자음 계열에 함께 적용됩니다. (최소 1개는 켜져 있어야 해요)</p>
-      <div class="vowel-picks" id="vowelPicks"></div>
-    </div>
-    <div class="card">
       <h2>⚙️ 배운 음절(진도) 설정</h2>
       <p class="hint">현재 진도에 맞춰 사용할 음절을 켜고 끌 수 있어요. 나중에 받침·다른 자음을 배우면 새 진도를 켜서 확장하세요. 변경은 자동 저장됩니다.</p>
+      <div class="keys-group-label" style="margin-top:4px">모음 (배운 모음만 켜기 · 최소 1개)</div>
+      <div class="vowel-picks" id="vowelPicks"></div>
+      <div class="keys-group-label" style="margin-top:18px">자음 계열</div>
       <div class="prog-groups" id="progGroups"></div>
     </div>
     <div class="card">
@@ -732,6 +730,7 @@ function renderProgress(){
   const box=document.getElementById('progGroups');
   box.innerHTML='';
   PROGRESS.forEach(g=>{
+    if(g.kind==='vowel') return;   // 모음은 위 '모음' 선택에서 관리
     const row=document.createElement('div');
     row.className='prog-row '+(g.active?'on':'off');
     const disabled=g.locked?'disabled':'';
