@@ -117,7 +117,6 @@
   .btn-gen{background:var(--blue);color:#fff}
   .btn-print{background:var(--lime)}
   .btn-copy{background:#fff}
-  .btn-hand{background:#e2d5ff;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center}
 
   .result-list{margin-top:8px}
   .result-item{
@@ -266,8 +265,8 @@
       <div class="genbtns">
         <button class="btn-gen" onclick="generate()">✨ 생성</button>
         <button class="btn-copy" onclick="copyResult()">📋 복사</button>
+        <button class="btn-copy" onclick="window.open('https://slp-irudassam.github.io/korean-handwriting/','_blank')">✍️ 글씨 연습장 만들기</button>
         <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>
-        <a class="btn-hand" href="https://slp-irudassam.github.io/korean-handwriting/" target="_blank" rel="noopener">✍️ 글씨 연습장 만들기</a>
       </div>
       <p class="hint" style="margin:12px 0 0">📋 <b>복사</b>한 뒤 <b>글씨 연습장 만들기</b>를 열어 붙여넣으면, 이 단어들로 <b>쓰기 연습장</b>까지 만들 수 있어요.</p>
     </div>
