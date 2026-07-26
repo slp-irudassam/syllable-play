@@ -176,14 +176,14 @@
   <div class="sub">아·어·오·우·이 계열</div>
 </div>
 <div class="modeswitch">
-  <button id="tabPlay" class="on" onclick="switchMode('play')">🎈 아이 놀이</button>
+  <button id="tabProg" class="on" onclick="switchMode('prog')">⚙️ 진도 설정</button>
+  <button id="tabPlay" onclick="switchMode('play')">🎈 아이 놀이</button>
   <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
-  <button id="tabProg" onclick="switchMode('prog')">⚙️ 진도 설정</button>
 </div>
 
 <main>
   <!-- ================= 놀이 모드 ================= -->
-  <section id="playPanel" class="panel on">
+  <section id="playPanel" class="panel">
     <div class="card">
       <p class="eyebrow">MAKE A WORD</p>
       <h2>✏️ 음절을 눌러 단어를 만들어요</h2>
@@ -276,7 +276,7 @@
   </section>
 
   <!-- ================= 진도 설정 ================= -->
-  <section id="progPanel" class="panel">
+  <section id="progPanel" class="panel on">
     <div class="card">
       <p class="hint" style="margin:0;font-size:12px;color:#888">
         📖 온라인 판별 출처: 국립국어원 <b>한국어기초사전</b> (CC BY-SA 2.0 KR).<br>
@@ -822,6 +822,7 @@ function renderActiveSyls(){
 renderKeyboard();
 renderBuild();
 renderCollected();
+renderProgress();
 </script>
 </body>
 </html>
