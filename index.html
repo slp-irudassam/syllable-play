@@ -731,7 +731,7 @@ function renderResult(items,head){
 let lastResult=[];
 function copyResult(){
   if(!lastResult.length){ return; }
-  const txt=lastResult.map((t,i)=>(i+1)+'. '+t).join('\n');
+  const txt=lastResult.join('\n');
   navigator.clipboard.writeText(txt).then(()=>{
     const b=event.target; const o=b.textContent; b.textContent='✅ 복사됨';
     setTimeout(()=>b.textContent=o,1200);
