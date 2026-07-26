@@ -281,11 +281,11 @@
     </div>
     <div class="card">
       <h2>⚙️ 배운 음절(진도) 설정</h2>
-      <p class="hint">현재 진도에 맞춰 사용할 음절을 켜고 끌 수 있어요. 나중에 받침·다른 자음을 배우면 새 진도를 켜서 확장하세요. 변경은 자동 저장됩니다.</p>
+      <p class="hint">배운 모음과 자음만 켜세요. 켠 자음 × 켠 모음이 조합되어 놀이·자료 생성에 사용됩니다. 변경은 자동 저장됩니다.</p>
       <div class="keys-group-label" style="margin-top:4px">모음 (배운 모음만 켜기 · 최소 1개)</div>
       <div class="vowel-picks" id="vowelPicks"></div>
-      <div class="keys-group-label" style="margin-top:18px">자음 계열</div>
-      <div class="prog-groups" id="progGroups"></div>
+      <div class="keys-group-label" style="margin-top:18px">자음 (ㄱ~ㅎ)</div>
+      <div class="vowel-picks" id="consPicks"></div>
     </div>
     <div class="card">
       <h2>🔤 현재 활성 음절</h2>
@@ -305,31 +305,44 @@
    - active:true 인 그룹만 조합/생성에 사용
    - 새 진도 추가는 이 배열에 그룹을 추가하면 됨
    ========================================================= */
-const PROGRESS = [
-  { id:'vowel', label:'모음', kind:'vowel', locked:true, active:true,
-    syllables:['아','어','오','우','이'] },
-  { id:'g', label:'ㄱ 계열', kind:'cons', active:true, syllables:['가','거','고','구','기'] },
-  { id:'n', label:'ㄴ 계열', kind:'cons', active:true, syllables:['나','너','노','누','니'] },
-  { id:'d', label:'ㄷ 계열', kind:'cons', active:true, syllables:['다','더','도','두','디'] },
-  { id:'m', label:'ㅁ 계열', kind:'cons', active:true, syllables:['마','머','모','무','미'] },
-  { id:'b', label:'ㅂ 계열', kind:'cons', active:true, syllables:['바','버','보','부','비'] },
-  { id:'s', label:'ㅅ 계열', kind:'cons', active:true, syllables:['사','서','소','수','시'] },
-  { id:'j', label:'ㅈ 계열', kind:'cons', active:true, syllables:['자','저','조','주','지'] },
-  /* --- 아래는 다음 진도 예시(기본 꺼짐). 실제 배우면 켜기 --- */
-  { id:'r', label:'ㄹ 계열(예정)', kind:'cons', active:false, syllables:['라','러','로','루','리'] },
-  { id:'h', label:'ㅎ 계열(예정)', kind:'cons', active:false, syllables:['하','허','호','후','히'] },
+/* 모음(중성) 개별 진도 — 표시글자 + 중성 자모 */
+const VOWELS = [
+  { ch:'아', jung:'ㅏ', active:true },
+  { ch:'야', jung:'ㅑ', active:true },
+  { ch:'어', jung:'ㅓ', active:true },
+  { ch:'여', jung:'ㅕ', active:true },
+  { ch:'오', jung:'ㅗ', active:true },
+  { ch:'요', jung:'ㅛ', active:true },
+  { ch:'우', jung:'ㅜ', active:true },
+  { ch:'유', jung:'ㅠ', active:true },
+  { ch:'으', jung:'ㅡ', active:true },
+  { ch:'이', jung:'ㅣ', active:true },
+];
+/* 자음(초성) 개별 진도 — ㅇ 제외(ㅇ+모음은 모음 단독 음절과 동일) */
+const CONSONANTS = [
+  { ch:'ㄱ', cho:'ㄱ', active:true },
+  { ch:'ㄴ', cho:'ㄴ', active:true },
+  { ch:'ㄷ', cho:'ㄷ', active:true },
+  { ch:'ㄹ', cho:'ㄹ', active:true },
+  { ch:'ㅁ', cho:'ㅁ', active:true },
+  { ch:'ㅂ', cho:'ㅂ', active:true },
+  { ch:'ㅅ', cho:'ㅅ', active:true },
+  { ch:'ㅈ', cho:'ㅈ', active:true },
+  { ch:'ㅊ', cho:'ㅊ', active:true },
+  { ch:'ㅋ', cho:'ㅋ', active:true },
+  { ch:'ㅌ', cho:'ㅌ', active:true },
+  { ch:'ㅍ', cho:'ㅍ', active:true },
+  { ch:'ㅎ', cho:'ㅎ', active:true },
 ];
 
-/* 모음 개별 진도: 각 계열의 음절은 아·어·오·우·이 순서(열 0~4)로 정렬되어 있음.
-   여기서 켠 모음(열)만 조합/생성/키보드에 사용됨. */
-const VOWELS = [
-  { ch:'아', active:true },
-  { ch:'어', active:true },
-  { ch:'오', active:true },
-  { ch:'우', active:true },
-  { ch:'이', active:true },
-];
-function activeVowelCols(){ return VOWELS.map(v=>v.active); }
+/* 한글 자모 조합: 초성 + 중성 → 완성 음절(받침 없음) */
+const CHO_LIST=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG_LIST=['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+function compose(cho,jung){
+  const ci=CHO_LIST.indexOf(cho), ji=JUNG_LIST.indexOf(jung);
+  if(ci<0||ji<0) return '';
+  return String.fromCharCode(0xAC00 + (ci*21 + ji)*28);
+}
 
 /* =========================================================
    의미 단어 사전 (파일 자료 기반) - 품사/음절수 태깅
@@ -436,32 +449,30 @@ function updateKeyStatus(){
 (function loadProgress(){
   try{
     const saved=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
-    if(saved.active){
-      PROGRESS.forEach(g=>{ if(!g.locked && g.id in saved.active) g.active=saved.active[g.id]; });
+    if(Array.isArray(saved.v)){
+      VOWELS.forEach(x=>x.active=saved.v.includes(x.ch));
+      if(!VOWELS.some(x=>x.active)) VOWELS.forEach(x=>x.active=true); // 최소 1개
     }
-    if(Array.isArray(saved.vowels)){
-      saved.vowels.forEach((val,i)=>{ if(VOWELS[i]) VOWELS[i].active=!!val; });
-      if(!VOWELS.some(v=>v.active)) VOWELS.forEach(v=>v.active=true); // 안전장치
+    if(Array.isArray(saved.c)){
+      CONSONANTS.forEach(x=>x.active=saved.c.includes(x.ch));
     }
   }catch(e){}
 })();
 function saveProgress(){
-  const active={};
-  PROGRESS.forEach(g=>active[g.id]=g.active);
-  const vowels=VOWELS.map(v=>v.active);
-  localStorage.setItem(STORE_KEY,JSON.stringify({active,vowels}));
+  localStorage.setItem(STORE_KEY,JSON.stringify({
+    v:VOWELS.filter(x=>x.active).map(x=>x.ch),
+    c:CONSONANTS.filter(x=>x.active).map(x=>x.ch)
+  }));
 }
 
-/* 현재 활성 음절 목록 */
+/* 현재 활성 음절 목록 — 켠 모음(단독) + 켠 자음×켠 모음 조합 */
 function activeSyllables(){
-  const v=[],c=[];
-  const cols=activeVowelCols();
-  PROGRESS.forEach(g=>{
-    if(!g.active) return;
-    g.syllables.forEach((s,i)=>{
-      if(!cols[i]) return;               // 꺼진 모음 열 제외
-      (g.kind==='vowel'?v:c).push(s);
-    });
+  const av=VOWELS.filter(x=>x.active);
+  const v=av.map(x=>x.ch);
+  const c=[];
+  CONSONANTS.forEach(cn=>{
+    if(!cn.active) return;
+    av.forEach(vw=>{ const s=compose(cn.cho,vw.jung); if(s) c.push(s); });
   });
   return {vowels:v, cons:c, all:[...v,...c]};
 }
@@ -483,25 +494,28 @@ function switchMode(m){
 function renderKeyboard(){
   const kb=document.getElementById('keyboard');
   kb.innerHTML='';
-  const cols=activeVowelCols();
-  PROGRESS.forEach(g=>{
-    if(!g.active) return;
-    const syls=g.syllables.filter((s,i)=>cols[i]);   // 켠 모음 열만
-    if(syls.length===0) return;
+  const av=VOWELS.filter(x=>x.active);
+  const addGroup=(label,syls,kind)=>{
+    if(!syls.length) return;
     const lbl=document.createElement('div');
     lbl.className='keys-group-label';
-    lbl.textContent=g.label;
+    lbl.textContent=label;
     kb.appendChild(lbl);
     const grid=document.createElement('div');
     grid.className='keys';
     syls.forEach(s=>{
       const b=document.createElement('button');
-      b.className='key '+(g.kind==='vowel'?'vowel':'cons');
+      b.className='key '+(kind==='vowel'?'vowel':'cons');
       b.textContent=s;
       b.onclick=()=>pushSyl(s);
       grid.appendChild(b);
     });
     kb.appendChild(grid);
+  };
+  addGroup('모음', av.map(v=>v.ch), 'vowel');
+  CONSONANTS.forEach(cn=>{
+    if(!cn.active) return;
+    addGroup(cn.ch, av.map(v=>compose(cn.cho,v.jung)).filter(Boolean), 'cons');
   });
 }
 
@@ -727,35 +741,29 @@ document.getElementById('genType').addEventListener('change',e=>{
 function renderProgress(){
   updateKeyStatus();
   renderVowelPicks();
-  const box=document.getElementById('progGroups');
-  box.innerHTML='';
-  PROGRESS.forEach(g=>{
-    if(g.kind==='vowel') return;   // 모음은 위 '모음' 선택에서 관리
-    const row=document.createElement('div');
-    row.className='prog-row '+(g.active?'on':'off');
-    const disabled=g.locked?'disabled':'';
-    row.innerHTML=
-      '<label class="switch toggle"><input type="checkbox" '+(g.active?'checked':'')+' '+disabled+
-        ' onchange="toggleGroup(\''+g.id+'\',this.checked)"><span class="sl"></span></label>'+
-      '<span class="lbl">'+g.label+(g.locked?' 🔒':'')+'</span>'+
-      '<span class="syls">'+g.syllables.join(' · ')+'</span>';
-    box.appendChild(row);
-  });
+  renderConsPicks();
   renderActiveSyls();
+}
+function pickCell(ch,active,onchange){
+  const cell=document.createElement('div');
+  cell.className='vowel-cell'+(active?' on':'');
+  cell.innerHTML=
+    '<span class="vch">'+ch+'</span>'+
+    '<label class="switch"><input type="checkbox" '+(active?'checked':'')+
+      ' onchange="'+onchange+'"><span class="sl"></span></label>';
+  return cell;
 }
 function renderVowelPicks(){
   const box=document.getElementById('vowelPicks');
   if(!box) return;
   box.innerHTML='';
-  VOWELS.forEach((vw,i)=>{
-    const cell=document.createElement('div');
-    cell.className='vowel-cell'+(vw.active?' on':'');
-    cell.innerHTML=
-      '<span class="vch">'+vw.ch+'</span>'+
-      '<label class="switch"><input type="checkbox" '+(vw.active?'checked':'')+
-        ' onchange="toggleVowel('+i+',this.checked)"><span class="sl"></span></label>';
-    box.appendChild(cell);
-  });
+  VOWELS.forEach((vw,i)=>box.appendChild(pickCell(vw.ch,vw.active,'toggleVowel('+i+',this.checked)')));
+}
+function renderConsPicks(){
+  const box=document.getElementById('consPicks');
+  if(!box) return;
+  box.innerHTML='';
+  CONSONANTS.forEach((cn,i)=>box.appendChild(pickCell(cn.ch,cn.active,'toggleCons('+i+',this.checked)')));
 }
 function toggleVowel(i,val){
   if(!val && VOWELS.filter(v=>v.active).length<=1){ renderVowelPicks(); return; } // 최소 1개 유지
@@ -765,12 +773,11 @@ function toggleVowel(i,val){
   renderActiveSyls();
   renderKeyboard();
 }
-function toggleGroup(id,val){
-  const g=PROGRESS.find(x=>x.id===id);
-  if(!g||g.locked) return;
-  g.active=val;
+function toggleCons(i,val){
+  CONSONANTS[i].active=val;
   saveProgress();
-  renderProgress();
+  renderConsPicks();
+  renderActiveSyls();
   renderKeyboard();
 }
 function renderActiveSyls(){
