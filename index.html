@@ -147,6 +147,12 @@
   .switch input:checked + .sl:before{transform:translateX(24px);background:#fff}
   .switch input:disabled + .sl{opacity:.4;cursor:not-allowed}
 
+  /* 모음 개별 선택 */
+  .vowel-picks{display:flex;gap:12px;flex-wrap:wrap}
+  .vowel-cell{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 16px;border:var(--bd);border-radius:2px;background:#f7f7f2;box-shadow:var(--sh-sm);opacity:.55;transition:.12s}
+  .vowel-cell.on{background:var(--lime-soft);opacity:1}
+  .vowel-cell .vch{font-size:30px;font-weight:900;line-height:1}
+
   footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
   @media print{
@@ -199,7 +205,6 @@
 
     <div class="card">
       <h2>⭐ 내가 담은 단어 <span id="collectedCount" style="font-size:13px;color:#8a8578;font-weight:600"></span></h2>
-      <div class="hint">초록색은 뜻이 있는 단어, 주황색은 뜻이 없는 소리단어예요.</div>
       <div class="collected" id="collected"><span class="empty">아직 담은 단어가 없어요.</span></div>
     </div>
   </section>
@@ -269,16 +274,15 @@
   <!-- ================= 진도 설정 ================= -->
   <section id="progPanel" class="panel">
     <div class="card">
-      <p class="eyebrow">ONLINE DICTIONARY</p>
-      <h2>📚 온라인 사전</h2>
-      <p class="hint">
-        내장 사전에 없는 단어도 <b>한국어기초사전</b>에서 실시간으로 조회해 판별합니다. 별도 발급이나 설정 없이 바로 작동해요. 한 번 조회한 단어는 저장되어 다음부터는 즉시 판별되고, 무의미 단어 생성에서도 자동으로 빠집니다.
-      </p>
-      <div id="keyStatus" style="font-size:14px;font-weight:800;margin-top:6px"></div>
-      <p class="hint" style="margin:12px 0 0;font-size:12px;color:#888">
+      <p class="hint" style="margin:0;font-size:12px;color:#888">
         📖 온라인 판별 출처: 국립국어원 <b>한국어기초사전</b> (CC BY-SA 2.0 KR).<br>
         단어의 사전 등재 여부(사실)만 판별에 사용하며 뜻풀이는 저장·표시하지 않습니다.
       </p>
+    </div>
+    <div class="card">
+      <h2>🔤 배운 모음 선택</h2>
+      <p class="hint">배운 모음만 켜세요. 켠 모음만 모든 자음 계열에 함께 적용됩니다. (최소 1개는 켜져 있어야 해요)</p>
+      <div class="vowel-picks" id="vowelPicks"></div>
     </div>
     <div class="card">
       <h2>⚙️ 배운 음절(진도) 설정</h2>
@@ -317,6 +321,17 @@ const PROGRESS = [
   { id:'r', label:'ㄹ 계열(예정)', kind:'cons', active:false, syllables:['라','러','로','루','리'] },
   { id:'h', label:'ㅎ 계열(예정)', kind:'cons', active:false, syllables:['하','허','호','후','히'] },
 ];
+
+/* 모음 개별 진도: 각 계열의 음절은 아·어·오·우·이 순서(열 0~4)로 정렬되어 있음.
+   여기서 켠 모음(열)만 조합/생성/키보드에 사용됨. */
+const VOWELS = [
+  { ch:'아', active:true },
+  { ch:'어', active:true },
+  { ch:'오', active:true },
+  { ch:'우', active:true },
+  { ch:'이', active:true },
+];
+function activeVowelCols(){ return VOWELS.map(v=>v.active); }
 
 /* =========================================================
    의미 단어 사전 (파일 자료 기반) - 품사/음절수 태깅
@@ -426,18 +441,30 @@ function updateKeyStatus(){
     if(saved.active){
       PROGRESS.forEach(g=>{ if(!g.locked && g.id in saved.active) g.active=saved.active[g.id]; });
     }
+    if(Array.isArray(saved.vowels)){
+      saved.vowels.forEach((val,i)=>{ if(VOWELS[i]) VOWELS[i].active=!!val; });
+      if(!VOWELS.some(v=>v.active)) VOWELS.forEach(v=>v.active=true); // 안전장치
+    }
   }catch(e){}
 })();
 function saveProgress(){
   const active={};
   PROGRESS.forEach(g=>active[g.id]=g.active);
-  localStorage.setItem(STORE_KEY,JSON.stringify({active}));
+  const vowels=VOWELS.map(v=>v.active);
+  localStorage.setItem(STORE_KEY,JSON.stringify({active,vowels}));
 }
 
 /* 현재 활성 음절 목록 */
 function activeSyllables(){
   const v=[],c=[];
-  PROGRESS.forEach(g=>{ if(g.active){ (g.kind==='vowel'?v:c).push(...g.syllables); } });
+  const cols=activeVowelCols();
+  PROGRESS.forEach(g=>{
+    if(!g.active) return;
+    g.syllables.forEach((s,i)=>{
+      if(!cols[i]) return;               // 꺼진 모음 열 제외
+      (g.kind==='vowel'?v:c).push(s);
+    });
+  });
   return {vowels:v, cons:c, all:[...v,...c]};
 }
 
@@ -458,15 +485,18 @@ function switchMode(m){
 function renderKeyboard(){
   const kb=document.getElementById('keyboard');
   kb.innerHTML='';
+  const cols=activeVowelCols();
   PROGRESS.forEach(g=>{
     if(!g.active) return;
+    const syls=g.syllables.filter((s,i)=>cols[i]);   // 켠 모음 열만
+    if(syls.length===0) return;
     const lbl=document.createElement('div');
     lbl.className='keys-group-label';
     lbl.textContent=g.label;
     kb.appendChild(lbl);
     const grid=document.createElement('div');
     grid.className='keys';
-    g.syllables.forEach(s=>{
+    syls.forEach(s=>{
       const b=document.createElement('button');
       b.className='key '+(g.kind==='vowel'?'vowel':'cons');
       b.textContent=s;
@@ -488,9 +518,9 @@ function clearBuild(){ build=[]; renderBuild(); }
 function renderBuild(){
   const area=document.getElementById('buildArea');
   const verdict=document.getElementById('verdict');
+  verdict.textContent=''; verdict.className='verdict';
   if(build.length===0){
     area.innerHTML='<span class="placeholder">아래 글자를 눌러보세요</span>';
-    verdict.textContent=''; verdict.className='verdict';
     return;
   }
   area.innerHTML='';
@@ -500,7 +530,6 @@ function renderBuild(){
     el.textContent=s;
     area.appendChild(el);
   });
-  applyVerdict(build.join(''));
 }
 
 /* 단어 판별: 내장 사전 즉시 → 없으면(키 있을 때) 온라인 조회 */
@@ -570,7 +599,7 @@ function renderCollected(){
   box.innerHTML='';
   collected.forEach(c=>{
     const chip=document.createElement('span');
-    chip.className='chip '+(c.real?'real':'nonsense');
+    chip.className='chip';
     chip.textContent=c.word;
     box.appendChild(chip);
   });
@@ -699,6 +728,7 @@ document.getElementById('genType').addEventListener('change',e=>{
    ========================================================= */
 function renderProgress(){
   updateKeyStatus();
+  renderVowelPicks();
   const box=document.getElementById('progGroups');
   box.innerHTML='';
   PROGRESS.forEach(g=>{
@@ -713,6 +743,28 @@ function renderProgress(){
     box.appendChild(row);
   });
   renderActiveSyls();
+}
+function renderVowelPicks(){
+  const box=document.getElementById('vowelPicks');
+  if(!box) return;
+  box.innerHTML='';
+  VOWELS.forEach((vw,i)=>{
+    const cell=document.createElement('div');
+    cell.className='vowel-cell'+(vw.active?' on':'');
+    cell.innerHTML=
+      '<span class="vch">'+vw.ch+'</span>'+
+      '<label class="switch"><input type="checkbox" '+(vw.active?'checked':'')+
+        ' onchange="toggleVowel('+i+',this.checked)"><span class="sl"></span></label>';
+    box.appendChild(cell);
+  });
+}
+function toggleVowel(i,val){
+  if(!val && VOWELS.filter(v=>v.active).length<=1){ renderVowelPicks(); return; } // 최소 1개 유지
+  VOWELS[i].active=val;
+  saveProgress();
+  renderVowelPicks();
+  renderActiveSyls();
+  renderKeyboard();
 }
 function toggleGroup(id,val){
   const g=PROGRESS.find(x=>x.id===id);
