@@ -157,6 +157,32 @@
   .mini-btn{border:var(--bd);border-radius:2px;background:#fff;font-size:12px;font-weight:800;padding:5px 10px;cursor:pointer;box-shadow:var(--sh-sm);transition:transform .06s}
   .mini-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 
+  /* ---------- 벽돌깨기 게임 ---------- */
+  .game-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .seg{display:inline-flex;border:var(--bd);border-radius:2px;overflow:hidden;box-shadow:var(--sh-sm)}
+  .seg-btn{border:0;border-right:2px solid var(--ink);background:#fff;font-weight:900;font-size:13px;padding:10px 16px;cursor:pointer;color:var(--ink)}
+  .seg-btn:last-child{border-right:0}
+  .seg-btn.on{background:var(--blue);color:#fff}
+  .game-stats{display:flex;gap:16px;font-size:13px;font-weight:800;color:#555}
+  .game-stats b{font-size:20px;color:var(--ink)}
+  .arena{position:relative;height:330px;background:var(--lime-soft);border:var(--bd);border-radius:2px;overflow:hidden;margin-bottom:14px}
+  .bricks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px}
+  .brick{
+    border:var(--bd);border-radius:2px;box-shadow:var(--sh-sm);color:var(--ink);
+    font-size:30px;font-weight:900;min-height:58px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brick.shatter{animation:shatter .26s forwards}
+  @keyframes shatter{to{transform:scale(1.5) rotate(12deg);opacity:0}}
+  .ball{position:absolute;left:0;top:0;width:18px;height:18px;border-radius:50%;background:var(--ink);z-index:5;box-shadow:var(--sh-sm)}
+  .paddle{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:88px;height:12px;background:var(--blue);border:var(--bd);border-radius:2px;z-index:4}
+  .game-input-row{display:flex;gap:10px;align-items:center}
+  #gameInput{flex:1;padding:14px 16px;border:var(--bd);border-radius:2px;font-size:24px;font-weight:800;background:#fff;color:var(--ink);text-align:center}
+  #gameInput:focus{outline:none;box-shadow:var(--sh-sm)}
+  #gameInput.wrong{background:#ffdad7;animation:shake .2s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .game-msg{text-align:center;font-size:18px;font-weight:900;min-height:26px;margin-top:14px;color:var(--blue)}
+
   footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
   @media print{
@@ -178,6 +204,7 @@
 <div class="modeswitch">
   <button id="tabProg" class="on" onclick="switchMode('prog')">⚙️ 진도 설정</button>
   <button id="tabPlay" onclick="switchMode('play')">💡 연습하기</button>
+  <button id="tabGame" onclick="switchMode('game')">🧱 벽돌깨기</button>
   <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
 </div>
 
@@ -210,6 +237,36 @@
     <div class="card">
       <h2>⭐ 내가 담은 단어 <span id="collectedCount" style="font-size:13px;color:#8a8578;font-weight:600"></span></h2>
       <div class="collected" id="collected"><span class="empty">아직 담은 단어가 없어요.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 벽돌깨기 게임 ================= -->
+  <section id="gamePanel" class="panel">
+    <div class="card">
+      <p class="eyebrow">TYPING BRICK BREAKER</p>
+      <h2>🧱 음절 벽돌깨기</h2>
+      <p class="hint">벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 진도 설정에서 켠 음절만 나와요. 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.</p>
+      <div class="game-top">
+        <div class="seg">
+          <button class="seg-btn on" data-diff="syl" onclick="setDiff('syl')">한 글자</button>
+          <button class="seg-btn" data-diff="word" onclick="setDiff('word')">두 글자 낱말</button>
+        </div>
+        <div class="game-stats">
+          <span>점수 <b id="gScore">0</b></span>
+          <span>콤보 <b id="gCombo">0</b></span>
+          <span>깬 판 <b id="gStage">0</b></span>
+        </div>
+      </div>
+      <div class="arena" id="gameArena">
+        <div class="bricks" id="brickGrid"></div>
+        <div class="ball" id="gameBall"></div>
+        <div class="paddle" id="gamePaddle"></div>
+      </div>
+      <div class="game-input-row">
+        <input id="gameInput" type="text" placeholder="벽돌 글자를 여기에 치세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="mini-btn" onclick="newStage()">🔄 새 판</button>
+      </div>
+      <div class="game-msg" id="gameMsg"></div>
     </div>
   </section>
 
@@ -497,6 +554,7 @@ function switchMode(m){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.modeswitch button').forEach(b=>b.classList.remove('on'));
   if(m==='play'){ playPanel.classList.add('on'); tabPlay.classList.add('on'); }
+  if(m==='game'){ gamePanel.classList.add('on'); tabGame.classList.add('on'); startGameTab(); }
   if(m==='gen'){ genPanel.classList.add('on'); tabGen.classList.add('on'); }
   if(m==='prog'){ progPanel.classList.add('on'); tabProg.classList.add('on'); renderProgress(); }
 }
@@ -817,6 +875,132 @@ function renderActiveSyls(){
     box.appendChild(chip);
   });
 }
+
+/* =========================================================
+   벽돌깨기 게임 — 진도 음절 연동, 한글 IME 입력
+   ========================================================= */
+let gScore=0, gCombo=0, gStage=0, gDiff='syl', gBricks=[];
+const BRICK_COLORS=['--lime','--cons','--sent','--real','--lime-soft'];
+
+function setDiff(d){
+  gDiff=d;
+  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on', b.dataset.diff===d));
+  newStage();
+}
+/* 두 글자 실단어(진도 내) 모으기 */
+function twoSylWords(){
+  const out=[];
+  ['noun','verb','adv','pron','interj'].forEach(p=>{
+    const b=LEXICON[p]; if(!b) return;
+    (b[2]||[]).forEach(w=>{ if(activeAllows(w)) out.push(w); });
+  });
+  return [...new Set(out)];
+}
+function stageItems(){
+  let items;
+  if(gDiff==='word'){
+    items=shuffle(twoSylWords());
+    if(items.length<4) items=shuffle(activeSyllables().all); // 낱말이 부족하면 음절로 대체
+  }else{
+    items=shuffle(activeSyllables().all);
+  }
+  return items.slice(0,12);
+}
+function newStage(){
+  const grid=document.getElementById('brickGrid');
+  const msg=document.getElementById('gameMsg');
+  if(!grid) return;
+  const items=stageItems();
+  gBricks=[]; grid.innerHTML='';
+  if(!items.length){
+    msg.textContent='⚙️ 진도 설정에서 음절을 먼저 켜주세요!';
+    return;
+  }
+  msg.textContent='';
+  items.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='brick';
+    el.style.background='var('+BRICK_COLORS[i%BRICK_COLORS.length]+')';
+    el.textContent=t;
+    grid.appendChild(el);
+    gBricks.push({text:t, el, broken:false});
+  });
+  gCombo=0; renderGStats();
+  requestAnimationFrame(parkBall);
+  const gi=document.getElementById('gameInput'); if(gi){ gi.value=''; gi.focus(); }
+}
+function renderGStats(){
+  document.getElementById('gScore').textContent=gScore;
+  document.getElementById('gCombo').textContent=gCombo;
+  document.getElementById('gStage').textContent=gStage;
+}
+function parkBall(){
+  const arena=document.getElementById('gameArena'), ball=document.getElementById('gameBall');
+  if(!arena||!ball) return;
+  const w=arena.clientWidth, h=arena.clientHeight;
+  ball.style.transition='none';
+  ball.style.transform='translate('+(w/2-9)+'px,'+(h-34)+'px)';
+}
+function flyBall(brickEl, cb){
+  const arena=document.getElementById('gameArena'), ball=document.getElementById('gameBall');
+  const a=arena.getBoundingClientRect(), b=brickEl.getBoundingClientRect();
+  const x=b.left-a.left+b.width/2-9, y=b.top-a.top+b.height/2-9;
+  ball.style.transition='transform .16s ease-out';
+  ball.style.transform='translate('+x+'px,'+y+'px)';
+  setTimeout(()=>{
+    if(cb) cb();
+    const w=arena.clientWidth, h=arena.clientHeight;
+    ball.style.transform='translate('+(w/2-9)+'px,'+(h-34)+'px)';
+  },170);
+}
+function resetGameInput(){
+  const gi=document.getElementById('gameInput');
+  gi.value=''; gi.blur(); gi.focus();  // IME 조합 상태 초기화
+}
+function breakBrick(b){
+  if(b.broken) return;
+  b.broken=true;
+  gScore += (gDiff==='word'?2:1) + Math.min(gCombo,5); // 콤보 보너스
+  gCombo++;
+  renderGStats();
+  flyBall(b.el, ()=>{
+    b.el.classList.add('shatter');
+    setTimeout(()=>{ b.el.style.visibility='hidden'; },240);
+  });
+  if(gBricks.every(x=>x.broken)) setTimeout(stageClear,300);
+}
+function stageClear(){
+  gStage++; renderGStats();
+  const cheers=['🎉 판 깼다! 잘했어요!','⭐ 멋져요! 다음 판 갈까요?','🏆 최고! 계속 가봐요!','👏 완벽해요!'];
+  document.getElementById('gameMsg').textContent=cheers[Math.floor(Math.random()*cheers.length)];
+  setTimeout(newStage,1300);
+}
+function handleGame(composing){
+  const gi=document.getElementById('gameInput');
+  if(!gBricks.length || gBricks.every(b=>b.broken)) return; // 판 정리 중
+  const v=gi.value.trim();
+  if(!v) return;
+  const hit=gBricks.find(b=>!b.broken && b.text===v);
+  if(hit){ breakBrick(hit); resetGameInput(); return; }
+  if(composing) return;               // 아직 글자 조합 중 → 판단 보류
+  const isPrefix=gBricks.some(b=>!b.broken && b.text.startsWith(v));
+  if(!isPrefix){                      // 확정됐는데 어느 벽돌도 아님 → 오타
+    gCombo=0; renderGStats();
+    gi.classList.add('wrong');
+    setTimeout(()=>gi.classList.remove('wrong'),200);
+    gi.value='';
+  }
+}
+function startGameTab(){
+  if(!gBricks.length || gBricks.every(b=>b.broken)) newStage();
+  else { requestAnimationFrame(parkBall); document.getElementById('gameInput').focus(); }
+}
+(function bindGame(){
+  const gi=document.getElementById('gameInput');
+  if(!gi) return;
+  gi.addEventListener('input', e=>handleGame(e.isComposing));
+  gi.addEventListener('compositionend', ()=>handleGame(false));
+})();
 
 /* =========================================================
    초기화
