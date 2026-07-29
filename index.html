@@ -197,6 +197,8 @@
   .raindrop{position:absolute;left:0;top:0;background:#fff;border:var(--bd);border-radius:2px;box-shadow:var(--sh-sm);font-size:26px;font-weight:900;padding:8px 12px;line-height:1;white-space:nowrap;z-index:3;color:var(--ink)}
   .raindrop.splash{animation:splash .3s forwards}
   @keyframes splash{to{opacity:0;background:#ffb3ad}}
+  .rain-pause{display:none;position:absolute;inset:0;z-index:9;background:rgba(244,244,239,.9);align-items:center;justify-content:center;text-align:center;font-size:28px;font-weight:900;color:var(--ink)}
+  .rain-pause span{display:block;margin-top:8px;font-size:14px;font-weight:800;color:#666}
 
   footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
@@ -290,11 +292,13 @@
         <div class="arena rain-arena" id="rainArena">
           <div class="rain-ground"></div>
           <div class="rain-lives" id="rainLives"></div>
+          <div class="rain-pause" id="rainPause"><div>⏸️ 일시정지<br><span>“▶️ 계속하기”를 누르면 이어서 해요</span></div></div>
         </div>
       </div>
 
       <div class="game-input-row">
         <input id="gameInput" type="text" placeholder="글자를 여기에 치세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="mini-btn" id="pauseBtn" style="display:none" onclick="togglePause()">⏸️ 일시정지</button>
         <button class="mini-btn" onclick="restartGame()">🔄 다시</button>
       </div>
       <div class="game-msg" id="gameMsg"></div>
@@ -915,7 +919,7 @@ let gScore=0, gCombo=0, gStage=0, gDiff='syl', gBricks=[];
 let currentGame='brick';
 const BRICK_COLORS=['--lime','--cons','--sent','--real','--lime-soft'];
 /* 산성비 상태 */
-let rainItems=[], rainRAF=null, rainActive=false, rainLives=3, lastSpawn=0;
+let rainItems=[], rainRAF=null, rainActive=false, rainLives=3, lastSpawn=0, rainPaused=false;
 const RAIN_SPEED=0.7, RAIN_SPAWN_MS=1700, RAIN_MAX=5;
 /* 사운드 */
 let audioCtx=null, soundOn=true;
@@ -1081,6 +1085,7 @@ function selectGame(g){
   document.querySelectorAll('.gp-btn').forEach(b=>b.classList.toggle('on', b.dataset.game===g));
   document.getElementById('brickGame').style.display = g==='brick'?'':'none';
   document.getElementById('rainGame').style.display  = g==='rain'?'':'none';
+  document.getElementById('pauseBtn').style.display   = g==='rain'?'':'none';
   document.getElementById('gThirdLabel').textContent = g==='brick'?'깬 판':'생명';
   document.getElementById('gameHint').innerHTML = g==='brick'
     ? '벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.'
@@ -1107,16 +1112,35 @@ function renderRainLives(){
 function startRain(){
   stopBrick();
   rainItems.forEach(it=>it.el.remove()); rainItems=[];
-  rainActive=true; rainLives= (rainLives>0?rainLives:3); lastSpawn=0;
+  rainActive=true; rainPaused=false; rainLives= (rainLives>0?rainLives:3); lastSpawn=0;
+  const btn=document.getElementById('pauseBtn'); if(btn) btn.textContent='⏸️ 일시정지';
+  const ov=document.getElementById('rainPause'); if(ov) ov.style.display='none';
   gCombo=0; renderGStats(); renderRainLives();
   if(rainRAF) cancelAnimationFrame(rainRAF);
   rainRAF=requestAnimationFrame(rainStep);
   focusInput();
 }
 function stopRain(){
-  rainActive=false;
+  rainActive=false; rainPaused=false;
   if(rainRAF){ cancelAnimationFrame(rainRAF); rainRAF=null; }
   rainItems.forEach(it=>it.el.remove()); rainItems=[];
+}
+function togglePause(){
+  if(currentGame!=='rain' || !rainActive) return;
+  rainPaused=!rainPaused;
+  const btn=document.getElementById('pauseBtn');
+  const ov=document.getElementById('rainPause');
+  if(rainPaused){
+    if(rainRAF){ cancelAnimationFrame(rainRAF); rainRAF=null; }
+    btn.textContent='▶️ 계속하기';
+    ov.style.display='flex';
+  }else{
+    btn.textContent='⏸️ 일시정지';
+    ov.style.display='none';
+    lastSpawn=0;                 // 재개 시 글자 폭주 방지
+    rainRAF=requestAnimationFrame(rainStep);
+    focusInput();
+  }
 }
 function spawnRain(W){
   const pool=currentDiffItems(); if(!pool.length) return;
@@ -1170,7 +1194,7 @@ function rainGameOver(){
   },1600);
 }
 function handleRain(composing){
-  if(!rainActive) return;
+  if(!rainActive || rainPaused) return;
   const gi=document.getElementById('gameInput');
   const v=gi.value.trim(); if(!v) return;
   const hits=rainItems.filter(it=>!it.dead && it.text===v);
@@ -1185,6 +1209,7 @@ function handleRain(composing){
   if(!gi) return;
   gi.addEventListener('input', e=>handleGame(e.isComposing));
   gi.addEventListener('compositionend', ()=>handleGame(false));
+  gi.addEventListener('keydown', e=>{ if(e.key==='Escape' && currentGame==='rain'){ e.preventDefault(); togglePause(); } });
 })();
 
 /* =========================================================
