@@ -270,12 +270,14 @@
       <div class="game-top">
         <div class="seg">
           <button class="seg-btn on" data-diff="syl" onclick="setDiff('syl')">한 글자</button>
-          <button class="seg-btn" data-diff="word" onclick="setDiff('word')">두 글자 낱말</button>
+          <button class="seg-btn" data-diff="word2" onclick="setDiff('word2')">두 글자</button>
+          <button class="seg-btn" data-diff="word3" onclick="setDiff('word3')">세 글자</button>
         </div>
         <div class="game-stats">
           <span>점수 <b id="gScore">0</b></span>
           <span>콤보 <b id="gCombo">0</b></span>
           <span><span id="gThirdLabel">깬 판</span> <b id="gStage">0</b></span>
+          <span id="bestStat" style="display:none">🏆 최고 <b id="gBest">0</b></span>
         </div>
       </div>
 
@@ -923,6 +925,13 @@ let rainItems=[], rainRAF=null, rainActive=false, rainLives=3, lastSpawn=0, rain
 const RAIN_SPEED=0.7, RAIN_SPAWN_MS=1700, RAIN_MAX=5;
 /* 사운드 */
 let audioCtx=null, soundOn=true;
+/* 산성비 최고 점수 (난이도별, localStorage) */
+const RAIN_BEST_KEY='syllable-rain-best-v1';
+let rainBest={syl:0, word2:0, word3:0};
+(function loadRainBest(){ try{ const s=JSON.parse(localStorage.getItem(RAIN_BEST_KEY)||'null'); if(s) rainBest=Object.assign(rainBest,s); }catch(e){} })();
+function saveRainBest(){ localStorage.setItem(RAIN_BEST_KEY, JSON.stringify(rainBest)); }
+function currentBest(){ return rainBest[gDiff]||0; }
+function renderBest(){ const el=document.getElementById('gBest'); if(el) el.textContent=currentBest(); }
 
 function setDiff(d){
   gDiff=d;
@@ -930,18 +939,20 @@ function setDiff(d){
   restartGame();
 }
 /* 두 글자 실단어(진도 내) 모으기 */
-function twoSylWords(){
+function nSylWords(n){
   const out=[];
   ['noun','verb','adv','pron','interj'].forEach(p=>{
     const b=LEXICON[p]; if(!b) return;
-    (b[2]||[]).forEach(w=>{ if(activeAllows(w)) out.push(w); });
+    (b[n]||[]).forEach(w=>{ if(activeAllows(w)) out.push(w); });
   });
   return [...new Set(out)];
 }
 function currentDiffItems(){
-  if(gDiff==='word'){ const w=twoSylWords(); if(w.length>=4) return w; } // 낱말 부족하면 음절로
+  if(gDiff==='word2'){ const w=nSylWords(2); if(w.length>=4) return w; } // 낱말 부족하면 음절로
+  if(gDiff==='word3'){ const w=nSylWords(3); if(w.length>=4) return w; }
   return activeSyllables().all;
 }
+function diffPoints(){ return gDiff==='word3'?3 : gDiff==='word2'?2 : 1; } // 글자 수만큼 점수
 function stageItems(){ return shuffle(currentDiffItems()).slice(0,12); }
 function newStage(){
   const grid=document.getElementById('brickGrid');
@@ -998,7 +1009,7 @@ function resetGameInput(){
 function breakBrick(b){
   if(b.broken) return;
   b.broken=true;
-  gScore += (gDiff==='word'?2:1) + Math.min(gCombo,5); // 콤보 보너스
+  gScore += diffPoints() + Math.min(gCombo,5); // 콤보 보너스
   gCombo++;
   renderGStats();
   sfxPop();
@@ -1086,6 +1097,7 @@ function selectGame(g){
   document.getElementById('brickGame').style.display = g==='brick'?'':'none';
   document.getElementById('rainGame').style.display  = g==='rain'?'':'none';
   document.getElementById('pauseBtn').style.display   = g==='rain'?'':'none';
+  document.getElementById('bestStat').style.display   = g==='rain'?'':'none';
   document.getElementById('gThirdLabel').textContent = g==='brick'?'깬 판':'생명';
   document.getElementById('gameHint').innerHTML = g==='brick'
     ? '벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.'
@@ -1115,7 +1127,7 @@ function startRain(){
   rainActive=true; rainPaused=false; rainLives= (rainLives>0?rainLives:3); lastSpawn=0;
   const btn=document.getElementById('pauseBtn'); if(btn) btn.textContent='⏸️ 일시정지';
   const ov=document.getElementById('rainPause'); if(ov) ov.style.display='none';
-  gCombo=0; renderGStats(); renderRainLives();
+  gCombo=0; renderGStats(); renderRainLives(); renderBest();
   if(rainRAF) cancelAnimationFrame(rainRAF);
   rainRAF=requestAnimationFrame(rainStep);
   focusInput();
@@ -1172,7 +1184,8 @@ function catchRain(it){
   const a=document.getElementById('rainArena');
   burst(a, it.x+it.el.offsetWidth/2, it.y+it.el.offsetHeight/2, randColorVar());
   it.el.remove();
-  gScore += (gDiff==='word'?2:1)+Math.min(gCombo,5); gCombo++; renderGStats();
+  gScore += diffPoints()+Math.min(gCombo,5); gCombo++; renderGStats();
+  if(gScore>currentBest()){ rainBest[gDiff]=gScore; saveRainBest(); renderBest(); } // 최고 점수 갱신
   sfxPop();
 }
 function missRain(it){
