@@ -182,6 +182,21 @@
   #gameInput.wrong{background:#ffdad7;animation:shake .2s}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
   .game-msg{text-align:center;font-size:18px;font-weight:900;min-height:26px;margin-top:14px;color:var(--blue)}
+  /* 게임 선택 */
+  .game-picker{display:flex;gap:10px;margin:2px 0 14px}
+  .gp-btn{flex:1;border:var(--bd);border-radius:2px;background:#fff;font-weight:900;font-size:16px;padding:14px 10px;cursor:pointer;color:var(--ink);box-shadow:var(--sh-sm);transition:transform .08s}
+  .gp-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .gp-btn.on{background:var(--lime)}
+  /* 파티클(벽돌 조각) */
+  .particle{position:absolute;width:11px;height:11px;border:2px solid var(--ink);pointer-events:none;z-index:8;animation:burst .5s ease-out forwards}
+  @keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(200deg);opacity:0}}
+  /* 산성비 */
+  .rain-arena{overflow:hidden}
+  .rain-ground{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--ink);z-index:2}
+  .rain-lives{position:absolute;right:12px;bottom:12px;font-size:20px;letter-spacing:2px;z-index:6}
+  .raindrop{position:absolute;left:0;top:0;background:#fff;border:var(--bd);border-radius:2px;box-shadow:var(--sh-sm);font-size:26px;font-weight:900;padding:8px 12px;line-height:1;white-space:nowrap;z-index:3;color:var(--ink)}
+  .raindrop.splash{animation:splash .3s forwards}
+  @keyframes splash{to{opacity:0;background:#ffb3ad}}
 
   footer{text-align:center;font-size:12px;font-weight:700;color:#999;padding:24px 10px}
 
@@ -204,7 +219,7 @@
 <div class="modeswitch">
   <button id="tabProg" class="on" onclick="switchMode('prog')">⚙️ 진도 설정</button>
   <button id="tabPlay" onclick="switchMode('play')">💡 연습하기</button>
-  <button id="tabGame" onclick="switchMode('game')">🧱 벽돌깨기</button>
+  <button id="tabGame" onclick="switchMode('game')">🎮 게임</button>
   <button id="tabGen" onclick="switchMode('gen')">🖨️ 자료 만들기</button>
 </div>
 
@@ -243,9 +258,13 @@
   <!-- ================= 벽돌깨기 게임 ================= -->
   <section id="gamePanel" class="panel">
     <div class="card">
-      <p class="eyebrow">TYPING BRICK BREAKER</p>
-      <h2>🧱 음절 벽돌깨기</h2>
-      <p class="hint">벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 진도 설정에서 켠 음절만 나와요. 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.</p>
+      <p class="eyebrow">TYPING GAMES</p>
+      <h2>🎮 타자 게임 <button id="soundToggle" class="mini-btn" style="margin-left:auto" onclick="toggleSound()">🔊</button></h2>
+      <div class="game-picker">
+        <button class="gp-btn on" data-game="brick" onclick="selectGame('brick')">🧱 벽돌깨기</button>
+        <button class="gp-btn" data-game="rain" onclick="selectGame('rain')">🌧️ 산성비</button>
+      </div>
+      <p class="hint" id="gameHint">벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 진도 설정에서 켠 음절만 나와요. 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.</p>
       <div class="game-top">
         <div class="seg">
           <button class="seg-btn on" data-diff="syl" onclick="setDiff('syl')">한 글자</button>
@@ -254,17 +273,29 @@
         <div class="game-stats">
           <span>점수 <b id="gScore">0</b></span>
           <span>콤보 <b id="gCombo">0</b></span>
-          <span>깬 판 <b id="gStage">0</b></span>
+          <span><span id="gThirdLabel">깬 판</span> <b id="gStage">0</b></span>
         </div>
       </div>
-      <div class="arena" id="gameArena">
-        <div class="bricks" id="brickGrid"></div>
-        <div class="ball" id="gameBall"></div>
-        <div class="paddle" id="gamePaddle"></div>
+
+      <!-- 벽돌깨기 -->
+      <div id="brickGame">
+        <div class="arena" id="gameArena">
+          <div class="bricks" id="brickGrid"></div>
+          <div class="ball" id="gameBall"></div>
+          <div class="paddle" id="gamePaddle"></div>
+        </div>
       </div>
+      <!-- 산성비 -->
+      <div id="rainGame" style="display:none">
+        <div class="arena rain-arena" id="rainArena">
+          <div class="rain-ground"></div>
+          <div class="rain-lives" id="rainLives"></div>
+        </div>
+      </div>
+
       <div class="game-input-row">
-        <input id="gameInput" type="text" placeholder="벽돌 글자를 여기에 치세요" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <button class="mini-btn" onclick="newStage()">🔄 새 판</button>
+        <input id="gameInput" type="text" placeholder="글자를 여기에 치세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="mini-btn" onclick="restartGame()">🔄 다시</button>
       </div>
       <div class="game-msg" id="gameMsg"></div>
     </div>
@@ -553,6 +584,7 @@ function activeSyllables(){
 function switchMode(m){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.modeswitch button').forEach(b=>b.classList.remove('on'));
+  if(m!=='game') stopRain();  // 게임 탭 벗어나면 산성비 정지
   if(m==='play'){ playPanel.classList.add('on'); tabPlay.classList.add('on'); }
   if(m==='game'){ gamePanel.classList.add('on'); tabGame.classList.add('on'); startGameTab(); }
   if(m==='gen'){ genPanel.classList.add('on'); tabGen.classList.add('on'); }
@@ -880,12 +912,18 @@ function renderActiveSyls(){
    벽돌깨기 게임 — 진도 음절 연동, 한글 IME 입력
    ========================================================= */
 let gScore=0, gCombo=0, gStage=0, gDiff='syl', gBricks=[];
+let currentGame='brick';
 const BRICK_COLORS=['--lime','--cons','--sent','--real','--lime-soft'];
+/* 산성비 상태 */
+let rainItems=[], rainRAF=null, rainActive=false, rainLives=3, lastSpawn=0;
+const RAIN_SPEED=0.7, RAIN_SPAWN_MS=1700, RAIN_MAX=5;
+/* 사운드 */
+let audioCtx=null, soundOn=true;
 
 function setDiff(d){
   gDiff=d;
   document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on', b.dataset.diff===d));
-  newStage();
+  restartGame();
 }
 /* 두 글자 실단어(진도 내) 모으기 */
 function twoSylWords(){
@@ -896,16 +934,11 @@ function twoSylWords(){
   });
   return [...new Set(out)];
 }
-function stageItems(){
-  let items;
-  if(gDiff==='word'){
-    items=shuffle(twoSylWords());
-    if(items.length<4) items=shuffle(activeSyllables().all); // 낱말이 부족하면 음절로 대체
-  }else{
-    items=shuffle(activeSyllables().all);
-  }
-  return items.slice(0,12);
+function currentDiffItems(){
+  if(gDiff==='word'){ const w=twoSylWords(); if(w.length>=4) return w; } // 낱말 부족하면 음절로
+  return activeSyllables().all;
 }
+function stageItems(){ return shuffle(currentDiffItems()).slice(0,12); }
 function newStage(){
   const grid=document.getElementById('brickGrid');
   const msg=document.getElementById('gameMsg');
@@ -920,10 +953,11 @@ function newStage(){
   items.forEach((t,i)=>{
     const el=document.createElement('div');
     el.className='brick';
-    el.style.background='var('+BRICK_COLORS[i%BRICK_COLORS.length]+')';
+    const cv=BRICK_COLORS[i%BRICK_COLORS.length];
+    el.style.background='var('+cv+')';
     el.textContent=t;
     grid.appendChild(el);
-    gBricks.push({text:t, el, broken:false});
+    gBricks.push({text:t, el, broken:false, colorVar:cv});
   });
   gCombo=0; renderGStats();
   requestAnimationFrame(parkBall);
@@ -932,7 +966,7 @@ function newStage(){
 function renderGStats(){
   document.getElementById('gScore').textContent=gScore;
   document.getElementById('gCombo').textContent=gCombo;
-  document.getElementById('gStage').textContent=gStage;
+  document.getElementById('gStage').textContent = currentGame==='rain' ? rainLives : gStage;
 }
 function parkBall(){
   const arena=document.getElementById('gameArena'), ball=document.getElementById('gameBall');
@@ -963,11 +997,15 @@ function breakBrick(b){
   gScore += (gDiff==='word'?2:1) + Math.min(gCombo,5); // 콤보 보너스
   gCombo++;
   renderGStats();
+  sfxPop();
+  const arena=document.getElementById('gameArena');
   flyBall(b.el, ()=>{
     b.el.classList.add('shatter');
+    const a=arena.getBoundingClientRect(), r=b.el.getBoundingClientRect();
+    burst(arena, r.left-a.left+r.width/2, r.top-a.top+r.height/2, b.colorVar);
     setTimeout(()=>{ b.el.style.visibility='hidden'; },240);
   });
-  if(gBricks.every(x=>x.broken)) setTimeout(stageClear,300);
+  if(gBricks.every(x=>x.broken)) setTimeout(()=>{ sfxWin(); stageClear(); },300);
 }
 function stageClear(){
   gStage++; renderGStats();
@@ -976,6 +1014,10 @@ function stageClear(){
   setTimeout(newStage,1300);
 }
 function handleGame(composing){
+  if(currentGame==='rain') handleRain(composing);
+  else handleBrick(composing);
+}
+function handleBrick(composing){
   const gi=document.getElementById('gameInput');
   if(!gBricks.length || gBricks.every(b=>b.broken)) return; // 판 정리 중
   const v=gi.value.trim();
@@ -985,16 +1027,159 @@ function handleGame(composing){
   if(composing) return;               // 아직 글자 조합 중 → 판단 보류
   const isPrefix=gBricks.some(b=>!b.broken && b.text.startsWith(v));
   if(!isPrefix){                      // 확정됐는데 어느 벽돌도 아님 → 오타
-    gCombo=0; renderGStats();
-    gi.classList.add('wrong');
-    setTimeout(()=>gi.classList.remove('wrong'),200);
-    gi.value='';
+    gCombo=0; renderGStats(); flashWrong(); sfxWrong(); gi.value='';
   }
 }
 function startGameTab(){
-  if(!gBricks.length || gBricks.every(b=>b.broken)) newStage();
-  else { requestAnimationFrame(parkBall); document.getElementById('gameInput').focus(); }
+  if(currentGame==='rain'){ if(!rainActive) startRain(); else focusInput(); }
+  else if(!gBricks.length || gBricks.every(b=>b.broken)){ newStage(); }
+  else { requestAnimationFrame(parkBall); focusInput(); }
 }
+function focusInput(){ const gi=document.getElementById('gameInput'); if(gi) gi.focus(); }
+function flashWrong(){ const gi=document.getElementById('gameInput'); gi.classList.add('wrong'); setTimeout(()=>gi.classList.remove('wrong'),200); }
+function randColorVar(){ return BRICK_COLORS[Math.floor(Math.random()*BRICK_COLORS.length)]; }
+
+/* ---------- 효과음 (Web Audio 합성, 파일 불필요) ---------- */
+function ac(){
+  if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function tone(freq,dur,type,vol,when){
+  if(!soundOn) return; const c=ac(); if(!c) return;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type||'square'; o.frequency.value=freq;
+  o.connect(g); g.connect(c.destination);
+  const t=c.currentTime+(when||0);
+  g.gain.setValueAtTime(vol||0.15,t);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t); o.stop(t+dur);
+}
+function sfxPop(){ tone(660,0.12,'square',0.18,0); tone(990,0.10,'square',0.12,0.02); }
+function sfxWrong(){ tone(150,0.18,'sawtooth',0.14,0); }
+function sfxWin(){ [523,659,784,1046].forEach((f,i)=>tone(f,0.16,'triangle',0.16,i*0.09)); }
+function toggleSound(){ soundOn=!soundOn; document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇'; if(soundOn) tone(880,0.08,'square',0.12,0); }
+
+/* ---------- 파티클 (벽돌 조각) ---------- */
+function burst(arena, cx, cy, colorVar){
+  for(let i=0;i<12;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const ang=Math.random()*Math.PI*2, dist=30+Math.random()*55;
+    p.style.setProperty('--dx',(Math.cos(ang)*dist).toFixed(1)+'px');
+    p.style.setProperty('--dy',(Math.sin(ang)*dist).toFixed(1)+'px');
+    p.style.left=(cx-5)+'px'; p.style.top=(cy-5)+'px';
+    p.style.background='var('+(colorVar||randColorVar())+')';
+    arena.appendChild(p);
+    setTimeout(()=>p.remove(),520);
+  }
+}
+
+/* ---------- 게임 선택 / 공통 ---------- */
+function selectGame(g){
+  currentGame=g;
+  document.querySelectorAll('.gp-btn').forEach(b=>b.classList.toggle('on', b.dataset.game===g));
+  document.getElementById('brickGame').style.display = g==='brick'?'':'none';
+  document.getElementById('rainGame').style.display  = g==='rain'?'':'none';
+  document.getElementById('gThirdLabel').textContent = g==='brick'?'깬 판':'생명';
+  document.getElementById('gameHint').innerHTML = g==='brick'
+    ? '벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.'
+    : '위에서 <b>떨어지는 글자</b>를 바닥에 닿기 전에 쳐서 없애요! 놓쳐도 괜찮아요 — 생명은 하트로 표시돼요.';
+  gScore=0; gCombo=0; gStage=0;
+  document.getElementById('gameMsg').textContent='';
+  if(g==='brick'){ stopRain(); renderGStats(); newStage(); }
+  else { rainLives=3; startRain(); }
+}
+function restartGame(){
+  gScore=0; gCombo=0; gStage=0;
+  document.getElementById('gameMsg').textContent='';
+  if(currentGame==='brick'){ renderGStats(); newStage(); }
+  else { rainLives=3; startRain(); }
+}
+function stopBrick(){ /* 벽돌깨기는 애니메이션 루프 없음 */ }
+
+/* ---------- 산성비 게임 ---------- */
+function renderRainLives(){
+  const el=document.getElementById('rainLives'); if(!el) return;
+  const n=Math.max(0,rainLives);
+  el.textContent='❤️'.repeat(n)+'🤍'.repeat(Math.max(0,3-n));
+}
+function startRain(){
+  stopBrick();
+  rainItems.forEach(it=>it.el.remove()); rainItems=[];
+  rainActive=true; rainLives= (rainLives>0?rainLives:3); lastSpawn=0;
+  gCombo=0; renderGStats(); renderRainLives();
+  if(rainRAF) cancelAnimationFrame(rainRAF);
+  rainRAF=requestAnimationFrame(rainStep);
+  focusInput();
+}
+function stopRain(){
+  rainActive=false;
+  if(rainRAF){ cancelAnimationFrame(rainRAF); rainRAF=null; }
+  rainItems.forEach(it=>it.el.remove()); rainItems=[];
+}
+function spawnRain(W){
+  const pool=currentDiffItems(); if(!pool.length) return;
+  const text=pool[Math.floor(Math.random()*pool.length)];
+  const el=document.createElement('div'); el.className='raindrop'; el.textContent=text;
+  document.getElementById('rainArena').appendChild(el);
+  const w=el.offsetWidth||60;
+  const x=Math.random()*Math.max(1,(W-w-8))+4;
+  el.style.transform='translate('+x+'px,-46px)';
+  rainItems.push({text, el, x, y:-46, speed:RAIN_SPEED, dead:false});
+}
+function rainStep(ts){
+  if(!rainActive) return;
+  const arena=document.getElementById('rainArena');
+  const H=arena.clientHeight, W=arena.clientWidth;
+  if(!lastSpawn) lastSpawn=ts;
+  if(ts-lastSpawn>RAIN_SPAWN_MS && rainItems.length<RAIN_MAX){ spawnRain(W); lastSpawn=ts; }
+  rainItems.forEach(it=>{
+    if(it.dead) return;
+    it.y+=it.speed;
+    it.el.style.transform='translate('+it.x+'px,'+it.y+'px)';
+    if(it.y > H-52) missRain(it);
+  });
+  rainItems=rainItems.filter(it=>!it.dead);
+  rainRAF=requestAnimationFrame(rainStep);
+}
+function catchRain(it){
+  it.dead=true;
+  const a=document.getElementById('rainArena');
+  burst(a, it.x+it.el.offsetWidth/2, it.y+it.el.offsetHeight/2, randColorVar());
+  it.el.remove();
+  gScore += (gDiff==='word'?2:1)+Math.min(gCombo,5); gCombo++; renderGStats();
+  sfxPop();
+}
+function missRain(it){
+  if(it.dead) return;
+  it.dead=true; it.el.classList.add('splash');
+  const el=it.el; setTimeout(()=>el.remove(),300);
+  gCombo=0; rainLives--; renderRainLives(); renderGStats(); sfxWrong();
+  if(rainLives<=0) rainGameOver();
+}
+function rainGameOver(){
+  rainActive=false;
+  if(rainRAF){ cancelAnimationFrame(rainRAF); rainRAF=null; }
+  rainItems.forEach(it=>it.el.remove()); rainItems=[];
+  document.getElementById('gameMsg').textContent='💪 아깝다! 다시 해볼까요?';
+  setTimeout(()=>{
+    if(currentGame==='rain' && document.getElementById('gamePanel').classList.contains('on')){
+      gScore=0; rainLives=3; startRain();
+    }
+  },1600);
+}
+function handleRain(composing){
+  if(!rainActive) return;
+  const gi=document.getElementById('gameInput');
+  const v=gi.value.trim(); if(!v) return;
+  const hits=rainItems.filter(it=>!it.dead && it.text===v);
+  if(hits.length){ hits.sort((a,b)=>b.y-a.y); catchRain(hits[0]); resetGameInput(); return; }
+  if(composing) return;
+  const isPrefix=rainItems.some(it=>!it.dead && it.text.startsWith(v));
+  if(!isPrefix){ gCombo=0; renderGStats(); flashWrong(); sfxWrong(); gi.value=''; }
+}
+
 (function bindGame(){
   const gi=document.getElementById('gameInput');
   if(!gi) return;
