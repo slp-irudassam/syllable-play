@@ -190,7 +190,7 @@
   /* 파티클(벽돌 조각) */
   .particle{position:absolute;width:11px;height:11px;border:2px solid var(--ink);pointer-events:none;z-index:8;animation:burst .5s ease-out forwards}
   @keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(200deg);opacity:0}}
-  /* 산성비 */
+  /* 글자잡기 */
   .rain-arena{overflow:hidden}
   .rain-ground{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--ink);z-index:2}
   .rain-lives{position:absolute;right:12px;bottom:12px;font-size:20px;letter-spacing:2px;z-index:6}
@@ -264,7 +264,7 @@
       <h2>🎮 타자 게임 <button id="soundToggle" class="mini-btn" style="margin-left:auto" onclick="toggleSound()">🔊</button></h2>
       <div class="game-picker">
         <button class="gp-btn on" data-game="brick" onclick="selectGame('brick')">🧱 벽돌깨기</button>
-        <button class="gp-btn" data-game="rain" onclick="selectGame('rain')">🌧️ 산성비</button>
+        <button class="gp-btn" data-game="rain" onclick="selectGame('rain')">💻 글자잡기</button>
       </div>
       <p class="hint" id="gameHint">벽돌에 적힌 글자를 <b>타자로 치면</b> 공이 날아가 벽돌을 깨요! 진도 설정에서 켠 음절만 나와요. 시간제한은 없으니 <b>천천히 소리 내어 읽고</b> 쳐보세요.</p>
       <div class="game-top">
@@ -289,7 +289,7 @@
           <div class="paddle" id="gamePaddle"></div>
         </div>
       </div>
-      <!-- 산성비 -->
+      <!-- 글자잡기 -->
       <div id="rainGame" style="display:none">
         <div class="arena rain-arena" id="rainArena">
           <div class="rain-ground"></div>
@@ -590,7 +590,7 @@ function activeSyllables(){
 function switchMode(m){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.modeswitch button').forEach(b=>b.classList.remove('on'));
-  if(m!=='game') stopRain();  // 게임 탭 벗어나면 산성비 정지
+  if(m!=='game') stopRain();  // 게임 탭 벗어나면 글자잡기 정지
   if(m==='play'){ playPanel.classList.add('on'); tabPlay.classList.add('on'); }
   if(m==='game'){ gamePanel.classList.add('on'); tabGame.classList.add('on'); startGameTab(); }
   if(m==='gen'){ genPanel.classList.add('on'); tabGen.classList.add('on'); }
@@ -920,12 +920,12 @@ function renderActiveSyls(){
 let gScore=0, gCombo=0, gStage=0, gDiff='syl', gBricks=[];
 let currentGame='brick';
 const BRICK_COLORS=['--lime','--cons','--sent','--real','--lime-soft'];
-/* 산성비 상태 */
+/* 글자잡기 상태 */
 let rainItems=[], rainRAF=null, rainActive=false, rainLives=3, lastSpawn=0, rainPaused=false;
 const RAIN_SPEED=0.7, RAIN_SPAWN_MS=1700, RAIN_MAX=5;
 /* 사운드 */
 let audioCtx=null, soundOn=true;
-/* 산성비 최고 점수 (난이도별, localStorage) */
+/* 글자잡기 최고 점수 (난이도별, localStorage) */
 const RAIN_BEST_KEY='syllable-rain-best-v1';
 let rainBest={syl:0, word2:0, word3:0};
 (function loadRainBest(){ try{ const s=JSON.parse(localStorage.getItem(RAIN_BEST_KEY)||'null'); if(s) rainBest=Object.assign(rainBest,s); }catch(e){} })();
@@ -1115,7 +1115,7 @@ function restartGame(){
 }
 function stopBrick(){ /* 벽돌깨기는 애니메이션 루프 없음 */ }
 
-/* ---------- 산성비 게임 ---------- */
+/* ---------- 글자잡기 게임 ---------- */
 function renderRainLives(){
   const el=document.getElementById('rainLives'); if(!el) return;
   const n=Math.max(0,rainLives);
