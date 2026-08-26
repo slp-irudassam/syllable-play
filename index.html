@@ -246,7 +246,7 @@
     <a href="manual.html" class="top-link" id="manualLink">❓ 사용법</a>
   </div>
 </div>
-<div id="freeBanner" style="display:none;background:var(--ink);color:var(--lime);text-align:center;font-weight:900;font-size:14px;letter-spacing:.3px;padding:10px 14px">🎁 일주일 한정 무료 나눔</div>
+<div id="freeBanner" style="display:none;background:var(--ink);color:var(--lime);text-align:center;font-weight:900;font-size:14px;letter-spacing:.3px;padding:10px 14px">🎁 ~9월 6일까지 무료 나눔</div>
 <div class="modeswitch" id="modeswitch">
   <button id="tabProg" class="on" onclick="switchMode('prog')">⚙️ 진도 설정</button>
   <button id="tabPlay" onclick="switchMode('play')">💡 놀이</button>
@@ -1265,9 +1265,20 @@ function nSylWords(n){
   ['noun','verb','adv','pron','interj'].forEach(p=>{ const b=LEXICON[p]; if(!b) return; (b[n]||[]).forEach(w=>{ if(wordAllowed(w)) out.push(w); }); });
   return [...new Set(out)];
 }
+function nSylCombos(n){
+  const pool=[...new Set(syllablePool('mix'))];
+  if(!pool.length) return [];
+  const out=new Set(); let guard=0;
+  const target=Math.min(40, Math.max(12, Math.round(Math.pow(pool.length,n))));
+  while(out.size<target && guard<target*30){
+    let w=''; for(let k=0;k<n;k++) w+=pool[Math.floor(Math.random()*pool.length)];
+    out.add(w); guard++;
+  }
+  return [...out];
+}
 function currentDiffItems(){
-  if(gDiff==='word2'){ const w=nSylWords(2); if(w.length>=4) return w; }
-  if(gDiff==='word3'){ const w=nSylWords(3); if(w.length>=4) return w; }
+  if(gDiff==='word2'){ const items=[...new Set([...nSylWords(2).filter(w=>w.length===2), ...nSylCombos(2)])]; if(items.length) return items; }
+  if(gDiff==='word3'){ const items=[...new Set([...nSylWords(3).filter(w=>w.length===3), ...nSylCombos(3)])]; if(items.length) return items; }
   return [...new Set(syllablePool('mix'))];
 }
 function diffPoints(){ return gDiff==='word3'?3 : gDiff==='word2'?2 : 1; }
