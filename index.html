@@ -246,7 +246,6 @@
     <a href="manual.html" class="top-link" id="manualLink">❓ 사용법</a>
   </div>
 </div>
-<div id="freeBanner" style="display:none;background:var(--ink);color:var(--lime);text-align:center;font-weight:900;font-size:14px;letter-spacing:.3px;padding:10px 14px">🎁 ~9월 6일까지 무료 나눔</div>
 <div class="modeswitch" id="modeswitch">
   <button id="tabProg" class="on" onclick="switchMode('prog')">⚙️ 진도 설정</button>
   <button id="tabPlay" onclick="switchMode('play')">💡 놀이</button>
@@ -1481,8 +1480,6 @@ if(!applyLockModeIfNeeded()){
   renderBoard();
   renderCollected();
 }
-/* 무료 나눔 배너 — 공유용 주소(hangul-beta 등)·미리보기에서만 표시, 메인 도메인은 깨끗하게 */
-if(location.hostname!=='hangul.sososoop.com'){ const fb=document.getElementById('freeBanner'); if(fb) fb.style.display='block'; }
 </script>
 </body>
 </html>
